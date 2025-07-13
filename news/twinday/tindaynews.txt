@@ -1,1 +1,1 @@
-["content${Test Mesajı 1}$ sender${Official TinDay Team}$ datetime${12.07.2025 08.00}$ ","content${Test Mesajı 2}$ sender${Official TinDay Team}$ datetime${12.07.2025 08.30}$ "]
+["content${Sevgili TinDay Kullanıcıları, kullanıcı adını Admin, Moderatör, Yetkili olarak giriş yapanları aldırış etmeyiniz. Anonim isimler herkes tarafından kullanılabilir. Bir Sorununuz/Sorunuz olursa çekinmeden bizlerle iletişime geçebilirsiniz. [IG]}$ sender${Official TinDay Team}$ datetime${12.07.2025 08.00}$ "]
