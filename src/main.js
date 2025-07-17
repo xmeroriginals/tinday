@@ -149,6 +149,7 @@ let timerInterval = null;
 let callTimeout = null;
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 3;
+let isSwitchingRooms = false;
 let spamTracker = {};
 let hasShownGlobalSpamWarning = false;
 let callsDisabledForSession = false;
@@ -518,13 +519,27 @@ const handleStatusCode = async (packet) => {
         setInterval(fetchAndDisplayNews, 120 * 1000);
         newsPollingStarted = !0;
       }
+    } else if (packet.listener === "room_switch_success") {
+      displaySystemNotification(
+        `${chatRoomNameHeader.textContent} odasına geçildi.`
+      );
+      isSwitchingRooms = false;
+      messageInput.focus();
     }
   } else {
     const errorMsg = `Server Error: ${packet.code}. ${
       packet.val || "Sunucu Hatası"
     }`;
     alert(errorMsg);
-    location.reload();
+    if (isSwitchingRooms) {
+      displaySystemNotification(
+        "Oda değiştirilirken bir hata oluştu.",
+        "error"
+      );
+      isSwitchingRooms = false;
+    } else {
+      location.reload();
+    }
   }
 };
 
@@ -1481,15 +1496,13 @@ function setupDataConnectionEvents(conn) {
 
 function initializePeerEvents(p) {
   p.on("open", (id) => {
+    reconnectAttempts = 0;
     if (localStorage.getItem(CALLS_DISABLED_KEY) === "true") {
       displaySystemNotification(
         "Arama özelliği kalıcı olarak kapalı. Yeniden açmak için ayarlar sayfasını bekleyin."
       );
     } else {
       displaySystemNotification("Arama özelliği aktif.");
-      displaySystemNotification(
-        "Global Sohbete Bağlanmak için 't.gc' yazabilirsiniz."
-      );
     }
     spamTracker = {};
   });
@@ -1506,21 +1519,7 @@ function initializePeerEvents(p) {
     }
   });
 
-  p.on("disconnected", () => {
-    if (reconnectAttempts < maxReconnectAttempts) {
-      reconnectAttempts++;
-      displaySystemNotification(
-        `Arama bağlantısı koptu. Yeniden bağlanılıyor... (${reconnectAttempts}/${maxReconnectAttempts})`,
-        "disconnected"
-      );
-      if (peer && !peer.destroyed) peer.reconnect();
-    } else {
-      displaySystemNotification(
-        "Bağlantı kurulamadı, lütfen internet bağlantınızı kontrol ediniz.",
-        "disconnected"
-      );
-    }
-  });
+  p.on("disconnected", handlePeerDisconnect);
 
   p.on("call", (incomingCall) => {
     const isPermanentlyDisabled =
@@ -1556,6 +1555,22 @@ function initializePeerEvents(p) {
     setupDataConnectionEvents(conn);
   });
 }
+
+const handlePeerDisconnect = () => {
+  if (reconnectAttempts < maxReconnectAttempts) {
+    reconnectAttempts++;
+    displaySystemNotification(
+      `Arama bağlantısı koptu. Yeniden bağlanılıyor... (${reconnectAttempts}/${maxReconnectAttempts})`,
+      "disconnected"
+    );
+    if (peer && !peer.destroyed) peer.reconnect();
+  } else {
+    displaySystemNotification(
+      "Bağlantı kurulamadı, lütfen internet bağlantınızı kontrol ediniz.",
+      "disconnected"
+    );
+  }
+};
 
 async function setupCallEvents(call) {
   currentCall = call;
@@ -1826,6 +1841,9 @@ window.addEventListener("load", () => {
     previousUserDiv.style.display = "block";
   }
   checkFormValidity();
+  displaySystemNotification(
+    "Global Sohbete Bağlanmak için 't.gc' yazabilirsiniz."
+  );
 });
 
 window.addEventListener("resize", checkScreenSize);
@@ -1901,44 +1919,14 @@ declineCallBtn.addEventListener("click", () => {
 function switchToGlobalChat() {
   const newRoomName = "TwinDayBirthdayChatGLOBAL";
   const displayRoomName = "Global Sohbet | Beta Test";
-
-  if (!socket || socket.readyState !== WebSocket.OPEN) {
-    displaySystemNotification(
-      "Oda değiştirmek için önce bir odaya bağlı olmalısınız.",
-      "error"
-    );
-    return;
-  }
-
-  roomName = newRoomName;
-  chatRoomNameHeader.textContent = displayRoomName;
-  messagesContainer.innerHTML = "";
-  totalMessageCount = 0;
-
-  displaySystemNotification(`${displayRoomName} odasına bağlanılıyor...`);
-  sendMessageToServer({
-    cmd: "link",
-    val: newRoomName,
-    listener: "link",
-  });
-  messageInput.focus();
-  reconnectAttempts = 0;
+  switchRoom(newRoomName, displayRoomName);
 }
 
 function switchToBirthdayChat() {
   const birthday = birthdayInput.value;
-
   if (!birthday) {
     displaySystemNotification(
-      "Doğum günü odasına dönmek için geçerli bir doğum tarihi gereklidir.",
-      "error"
-    );
-    return;
-  }
-
-  if (!socket || socket.readyState !== WebSocket.OPEN) {
-    displaySystemNotification(
-      "Oda değiştirmek için önce bir odaya bağlı olmalısınız.",
+      "Doğum günü odasına dönmek için giriş ekranındaki doğum tarihi bilgisi gerekli.",
       "error"
     );
     return;
@@ -1947,25 +1935,37 @@ function switchToBirthdayChat() {
   const date = new Date(birthday);
   const month = date.getUTCMonth() + 1;
   const day = date.getUTCDate();
-  const originalRoomName = `TwinDayBirthdayChat${month}${day}`;
+  const newRoomName = `TwinDayBirthdayChat${month}${day}`;
   const displayRoomName = `${day}/${month} Doğumlular | Beta Test`;
 
-  if (roomName === originalRoomName) {
-    displaySystemNotification("Zaten doğum günü odasındasınız.");
+  switchRoom(newRoomName, displayRoomName);
+}
+
+function switchRoom(newRoomName, displayRoomName) {
+  if (roomName === newRoomName) {
+    displaySystemNotification(`Zaten ${displayRoomName} odasındasınız.`);
     return;
   }
 
-  roomName = originalRoomName;
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    displaySystemNotification(
+      "Oda değiştirmek için bağlantı aktif olmalı.",
+      "error"
+    );
+    return;
+  }
+
+  isSwitchingRooms = true;
+  displaySystemNotification(`${displayRoomName} odasına geçiliyor...`);
+  sendMessageToServer({ cmd: "unlink", val: "" });
+  roomName = newRoomName;
   chatRoomNameHeader.textContent = displayRoomName;
   messagesContainer.innerHTML = "";
   totalMessageCount = 0;
 
-  displaySystemNotification(`${displayRoomName} odasına geri dönülüyor...`);
   sendMessageToServer({
     cmd: "link",
-    val: originalRoomName,
-    listener: "link",
+    val: newRoomName,
+    listener: "room_switch_success",
   });
-  messageInput.focus();
-  reconnectAttempts = 0;
 }
