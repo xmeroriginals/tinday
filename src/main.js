@@ -1842,7 +1842,7 @@ window.addEventListener("load", () => {
   }
   checkFormValidity();
   displaySystemNotification(
-    "Global Sohbete Bağlanmak için 't.gc' yazabilirsiniz."
+    "Komutlar için 't.help yazabilirsiniz.'"
   );
 });
 
