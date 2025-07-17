@@ -11,6 +11,7 @@
   --border-radius: 20px;
   --mgs-input: #fafafa;
   --mgs-input-textcolor: #000;
+  --call-accept-btn: #333333;
   --light-bg-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3Cpattern id='bgPattern' width='40' height='40' patternUnits='userSpaceOnUse'%3E%3Crect width='40' height='40' fill='%23f0f2f5'/%3E%3Cpath d='M0 0 L40 40 M40 0 L0 40' stroke='%23e2e8f0' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23bgPattern)'/%3E%3C/svg%3E");
 }
 
@@ -26,6 +27,7 @@
   --message-user: #4a4a4a;
   --mgs-input: #333333;
   --mgs-input-textcolor: #fff;
+  --call-accept-btn: #fafafa;
   --dark-bg-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cdefs%3E%3Cpattern id='bgPattern' width='40' height='40' patternUnits='userSpaceOnUse'%3E%3Crect width='40' height='40' fill='%231f1f1f'/%3E%3Cpath d='M0 0 L40 40 M40 0 L0 40' stroke='%232b2b2b' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23bgPattern)'/%3E%3C/svg%3E");
 }
 
@@ -53,6 +55,7 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body[data-theme="dark"] {
@@ -195,10 +198,10 @@ header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  border-radius: var(--border-radius);
   position: relative;
   width: 100%;
-  margin: 0 auto;
+  margin: 6px auto;
 }
 
 header i {
@@ -954,7 +957,7 @@ a.social-link i {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--call-accept-btn);
   font-size: 1.1rem;
   transition: opacity 0.3s;
 }
@@ -975,11 +978,14 @@ a.social-link i {
 }
 .call-notification-panel.in-call .accept-btn {
   opacity: 0;
-  width: 0;
   padding: 0;
   margin-right: -10px;
   pointer-events: none;
   transition: opacity 0.3s;
+}
+
+#declineCallBtn {
+  color: #fafafa;
 }
 
 #reply-preview-area {
