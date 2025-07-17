@@ -604,7 +604,6 @@ header img {
     top: auto;
     bottom: 85px;
     transform: translateX(0) translateY(10px);
-    justify-content: center;
   }
   #favoritesPanel.active {
     transform: translateX(0) translateY(0);
@@ -1105,6 +1104,5 @@ body[data-theme="dark"] .message-reply-container {
   }
   #favoritesPanel {
     bottom: 85px;
-    justify-content: center;
   }
 }
