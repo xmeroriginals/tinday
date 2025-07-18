@@ -91,6 +91,8 @@ const modalButtons = document.getElementById("modalButtons");
 
 const themeColorMeta = document.getElementById("themeColorMeta");
 
+const CALLS_ENABLED_KEY = "callsEnabled";
+
 const notificationSound = new Audio(
   "https://tinday.app.tc/assets/twinday/sounds/TinDay-Message.mp3"
 );
@@ -104,10 +106,7 @@ const messageSendSound = new Audio(
   "https://tinday.app.tc/assets/twinday/sounds/TinDay-MessageSend.mp3"
 );
 
-const callRejectedSound = new Audio(
-  "https://tinday.app.tc/assets/twinday/sounds/TinDay-CallTimeoutAndRejected.mp3"
-);
-const callTimeoutSound = new Audio(
+const callEndSound = new Audio(
   "https://tinday.app.tc/assets/twinday/sounds/TinDay-CallTimeoutAndRejected.mp3"
 );
 
@@ -121,12 +120,7 @@ const declineCallBtn = document.getElementById("declineCallBtn");
 const outgoingCallSound = document.getElementById("outgoing-call-sound");
 const incomingCallSound = document.getElementById("incoming-call-sound");
 
-const callSFX = [
-  outgoingCallSound,
-  incomingCallSound,
-  callRejectedSound,
-  callTimeoutSound,
-];
+const callSFX = [outgoingCallSound, incomingCallSound, callEndSound];
 
 let socket = null;
 let myName = "";
@@ -164,6 +158,7 @@ const userMessageTracker = new Map();
 let countdownInterval;
 let urlToOpen = "";
 let reconnectTimer = null;
+let isCallActive = false;
 
 console.log("%cDİKKAT!", "color: red; font-weight: bold; font-size: 45px;");
 console.log(
@@ -759,6 +754,20 @@ const handleSendMessage = async (event) => {
     return;
   }
 
+  const callCloseRegex = /^t\.(callclose|clcs)$/i;
+  if (callCloseRegex.test(messageText)) {
+    disableCalls();
+    messageInput.value = "";
+    return;
+  }
+
+  const callOpenRegex = /^t\.(callopen|clo)$/i;
+  if (callOpenRegex.test(messageText)) {
+    enableCalls();
+    messageInput.value = "";
+    return;
+  }
+
   const aiRegex = /^t\.ai\s+([\s\S]+)/i;
   const aiMatch = messageText.match(aiRegex);
   if (aiMatch) {
@@ -1158,8 +1167,14 @@ function displayHelpMessage() {
   messageDiv.appendChild(header);
 
   const commands = [
-    { cmd: "t.help", desc: "Bu yardım menüsünü gösterir." },
+    { cmd: "t.help", desc: "Yardım menüsünü gösterir." },
     { cmd: "t.clear", alias: "t.clr", desc: "Sohbet ekranını temizler." },
+    { cmd: "t.callopen", alias: "t.clo", desc: "Aramaları aktif eder." },
+    {
+      cmd: "t.callclose",
+      alias: "t.clcs",
+      desc: "Aramaları deaktif eder.",
+    },
     { cmd: "t.party", alias: "t.pty", desc: "Konfeti patlatır." },
     {
       cmd: "t.globalchat",
@@ -1340,25 +1355,14 @@ function showSpamProtectionModal() {
   showModal({
     title: "Spam Önleyici",
     message:
-      "Spam aramaya maruz kaldınız, isterseniz aramaları tamamen kapatabilirsiniz veya bu seferlik kapatarak bir sonraki girişinizde otomatik açılmasını sağlayabilirsiniz.",
-    checkbox: { id: "spamPermanentCheckbox", label: "Tamamen Kapat" },
+      "Spam aramaya maruz kaldınız. Güvenliğiniz için aramalar kalıcı olarak kapatılacaktır. Tekrar açmak için sohbet ekranına <b>t.callopen</b> yazabilirsiniz.",
+    checkbox: null,
     buttons: [
       {
-        text: "Onayla",
+        text: "Onayla ve Kapat",
         class: "confirm",
         onClick: () => {
-          callsDisabledForSession = true;
-          const checkbox = document.getElementById("spamPermanentCheckbox");
-          if (checkbox && checkbox.checked) {
-            localStorage.setItem(CALLS_DISABLED_KEY, "true");
-            displaySystemNotification(
-              "Aramalar kalıcı olarak kapatıldı. Bu ayar bir sonraki girişinizde de geçerli olacaktır."
-            );
-          } else {
-            displaySystemNotification(
-              "Aramalar bu oturum için kapatıldı. Sayfayı yenilediğinizde tekrar aktif olacaktır."
-            );
-          }
+          disableCalls();
           hideModal();
         },
       },
@@ -1418,7 +1422,7 @@ async function startCallTimeout() {
     const isCaller = acceptCallBtn.style.display === "none";
     if (isCaller) {
       callerNameDiv.textContent = "Cevap verilmedi.";
-      await playSound(callTimeoutSound);
+      await playSound(callEndSound);
     }
     hangupLogic();
   }, 30000);
@@ -1478,7 +1482,7 @@ async function handleIncomingData(data) {
       !callPanel.classList.contains("in-call");
     if (isRejected) {
       callerNameDiv.textContent = "Arama sonlandırıldı.";
-      await playSound(callRejectedSound);
+      await playSound(callEndSound);
     }
     hangupLogic(false);
   }
@@ -1497,20 +1501,16 @@ function setupDataConnectionEvents(conn) {
 function initializePeerEvents(p) {
   p.on("open", (id) => {
     reconnectAttempts = 0;
-    if (localStorage.getItem(CALLS_DISABLED_KEY) === "true") {
-      displaySystemNotification(
-        "Arama özelliği kalıcı olarak kapalı. Yeniden açmak için ayarlar sayfasını bekleyin."
-      );
-    } else {
-      displaySystemNotification("Arama özelliği aktif.");
-    }
+    displaySystemNotification(
+      "Arama özelliği aktif. Kapatmak için 't.callclose' yazın."
+    );
     spamTracker = {};
   });
 
   p.on("error", (err) => {
     if (err.type === "peer-unavailable") {
       displaySystemNotification(
-        "Aranan kullanıcı bulunamadı veya çevrimdışı.",
+        "Aranan kullanıcı bulunamadı, çevrimdışı veya aramalara kapalı.",
         "error"
       );
       if (currentCall) {
@@ -1524,7 +1524,7 @@ function initializePeerEvents(p) {
   p.on("call", (incomingCall) => {
     const isPermanentlyDisabled =
       localStorage.getItem(CALLS_DISABLED_KEY) === "true";
-    if (callsDisabledForSession || isPermanentlyDisabled) {
+    if (callsDisabledForSession || isPermanentlyDisabled || isCallActive) {
       incomingCall.close();
       return;
     }
@@ -1533,6 +1533,8 @@ function initializePeerEvents(p) {
       incomingCall.close();
       return;
     }
+
+    isCallActive = true;
 
     currentCall = incomingCall;
     const callerDisplayName = incomingCall.peer.split("-")[0];
@@ -1552,24 +1554,34 @@ function initializePeerEvents(p) {
       });
       return;
     }
+    reconnectAttempts = 0;
     setupDataConnectionEvents(conn);
   });
 }
 
 const handlePeerDisconnect = () => {
-  if (reconnectAttempts < maxReconnectAttempts) {
+  reconnectAttempts = 0;
+
+  const attemptReconnect = () => {
+    if (reconnectAttempts >= maxReconnectAttempts) {
+      displaySystemNotification(
+        "Bağlantı kurulamadı, lütfen internet bağlantınızı kontrol ediniz.",
+        "disconnected"
+      );
+      return;
+    }
+
     reconnectAttempts++;
     displaySystemNotification(
-      `Arama bağlantısı koptu. Yeniden bağlanılıyor... (${reconnectAttempts}/${maxReconnectAttempts})`,
+      `Yeniden bağlanılıyor... (${reconnectAttempts}/${maxReconnectAttempts})`,
       "disconnected"
     );
     if (peer && !peer.destroyed) peer.reconnect();
-  } else {
-    displaySystemNotification(
-      "Bağlantı kurulamadı, lütfen internet bağlantınızı kontrol ediniz.",
-      "disconnected"
-    );
-  }
+
+    setTimeout(() => {
+      if (!peer.open);
+    }, 20000);
+  };
 };
 
 async function setupCallEvents(call) {
@@ -1629,12 +1641,20 @@ async function hangupLogic(sendHangupSignal = true) {
     await stopAllSoundsWithFade();
     setTimeout(hideCallPanel, 2000);
   }
+  isCallActive = false;
 }
 
 async function initiateCall(targetRawId) {
+  if (isCallActive) {
+    displaySystemNotification(
+      "Lütfen mevcut arama işleminin bitmesini bekleyin.",
+      "info"
+    );
+    return;
+  }
   if (!peer || peer.disconnected) {
     displaySystemNotification(
-      "Arama sorunu oluştu, lütfen sayfayı yenileyiniz.",
+      "Arama sorunu oluştu veya Aramalara kapalısınız.",
       "error"
     );
     return;
@@ -1651,6 +1671,8 @@ async function initiateCall(targetRawId) {
     alert("Kendinizi arayamazsınız.");
     return;
   }
+
+  isCallActive = true;
 
   const targetPeerId = targetRawId
     .replace(/[#\s]+/g, "-")
@@ -1676,6 +1698,7 @@ async function initiateCall(targetRawId) {
           )} adlı kullanıcı şu anda başka bir meşgul.`,
           "info"
         );
+        playSound(callEndSound);
 
         hangupLogic(false);
         conn.close();
@@ -1691,16 +1714,32 @@ async function initiateCall(targetRawId) {
       "Mikrofona erişilemiyor, Lütfen tarayıcı izinlerini kontrol edin.",
       "error"
     );
-    hideCallPanel();
+    hangupLogic();
   }
 }
 
 function initializePeerConnection() {
+  const callsEnabledSetting = localStorage.getItem(CALLS_ENABLED_KEY);
+  const shouldEnableCalls = callsEnabledSetting !== "false";
+
+  if (!shouldEnableCalls) {
+    displaySystemNotification(
+      "Arama özelliği kapalı. Açmak için 't.callopen' yazın.",
+      "info"
+    );
+    callsDisabledForSession = true;
+    return;
+  }
+
+  if (callsEnabledSetting === null) {
+    localStorage.setItem(CALLS_ENABLED_KEY, "true");
+  }
+
   if (peer) {
     peer.destroy();
   }
   if (!myPeerId) {
-    console.error("PeerJS Error");
+    console.error("PeerJS Error: myPeerId is not set.");
     return;
   }
   console.log("Peer Connecting...");
@@ -1841,9 +1880,7 @@ window.addEventListener("load", () => {
     previousUserDiv.style.display = "block";
   }
   checkFormValidity();
-  displaySystemNotification(
-    "Komutlar için 't.help yazabilirsiniz.'"
-  );
+  displaySystemNotification("Komutlar için 't.help yazabilirsiniz.'");
 });
 
 window.addEventListener("resize", checkScreenSize);
@@ -1872,7 +1909,8 @@ document.getElementById("replyUser").addEventListener("click", () => {
 });
 
 acceptCallBtn.addEventListener("click", async () => {
-  if (!currentCall) return;
+  if (!currentCall || acceptCallBtn.disabled) return;
+
   acceptCallBtn.disabled = true;
 
   acceptCallBtn.style.transition =
@@ -1900,9 +1938,15 @@ acceptCallBtn.addEventListener("click", async () => {
 });
 
 declineCallBtn.addEventListener("click", () => {
-  const isRejecting = !callPanel.classList.contains("in-call") && currentCall;
+  const isRejectingIncomingCall =
+    acceptCallBtn.style.display !== "none" && currentCall;
+  const isCancellingOutgoingCall =
+    acceptCallBtn.style.display === "none" && currentCall;
+  const isInActiveCall = callPanel.classList.contains("in-call");
 
-  if (isRejecting) {
+  if (isRejectingIncomingCall) {
+    playSound(callEndSound);
+
     const callerId = currentCall.peer;
     if (!spamTracker[callerId]) {
       spamTracker[callerId] = { count: 0 };
@@ -1913,6 +1957,7 @@ declineCallBtn.addEventListener("click", () => {
       spamTracker[callerId].count = 0;
     }
   }
+
   hangupLogic();
 });
 
@@ -1968,4 +2013,31 @@ function switchRoom(newRoomName, displayRoomName) {
     val: newRoomName,
     listener: "room_switch_success",
   });
+}
+
+function disableCalls() {
+  if (peer && !peer.destroyed) {
+    peer.destroy();
+  }
+  peer = null;
+  callsDisabledForSession = true;
+
+  localStorage.setItem(CALLS_ENABLED_KEY, "false");
+
+  displaySystemNotification(
+    "Arama özelliği kapatıldı. Açmak için 't.callopen' yazın.",
+    "info"
+  );
+}
+
+function enableCalls() {
+  if (peer) {
+    displaySystemNotification("Arama özelliği zaten açık.", "info");
+    return;
+  }
+
+  localStorage.setItem(CALLS_ENABLED_KEY, "true");
+
+  initializePeerConnection();
+  callsDisabledForSession = false;
 }
