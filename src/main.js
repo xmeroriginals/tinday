@@ -79,6 +79,10 @@ const fileInput = document.getElementById("file-input");
 const favoritesPanel = document.getElementById("favoritesPanel");
 const favoritesContent = document.getElementById("favoritesContent");
 
+const inboxButton = document.getElementById("inbox-button");
+const inboxPanel = document.getElementById("inbox-panel");
+const inboxContent = document.getElementById("inbox-content");
+
 const dynamicModal = document.getElementById("dynamicModal");
 const modalTitle = document.getElementById("modalTitle");
 const modalMessage = document.getElementById("modalMessage");
@@ -90,6 +94,11 @@ const modalCheckboxLabel = document.getElementById("modalCheckboxLabel");
 const modalButtons = document.getElementById("modalButtons");
 
 const themeColorMeta = document.getElementById("themeColorMeta");
+
+const birthdayCountdownOverlay = document.getElementById(
+  "birthdayCountdownOverlay"
+);
+const countdownNumberEl = document.getElementById("countdown-number");
 
 const CALLS_ENABLED_KEY = "callsEnabled";
 
@@ -119,6 +128,15 @@ const acceptCallBtn = document.getElementById("acceptCallBtn");
 const declineCallBtn = document.getElementById("declineCallBtn");
 const outgoingCallSound = document.getElementById("outgoing-call-sound");
 const incomingCallSound = document.getElementById("incoming-call-sound");
+
+const CALLS_FEATURE_ENABLED_KEY = "tinday_calls_feature_enabled";
+const INBOX_FEATURE_ENABLED_KEY = "tinday_inbox_feature_enabled";
+const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
+const CHUNK_SIZE = 64 * 1024;
+const p2pSpamTracker = new Map();
+const P2P_SPAM_THRESHOLD = 30;
+const P2P_SPAM_WINDOW_MS = 10000;
+const P2P_COOLDOWN_DURATION_MS = 1 * 60 * 1000;
 
 const callSFX = [outgoingCallSound, incomingCallSound, callEndSound];
 
@@ -159,6 +177,12 @@ let countdownInterval;
 let urlToOpen = "";
 let reconnectTimer = null;
 let isCallActive = false;
+let inboxRequests = new Map();
+let areCallsEnabled = true;
+let areInboxEnabled = true;
+let incomingFileTransfers = new Map();
+let isMouseOverMessage = false;
+let lastHoveredMessageId = null;
 
 console.log("%cDİKKAT!", "color: red; font-weight: bold; font-size: 45px;");
 console.log(
@@ -449,7 +473,7 @@ const handleConnect = (event) => {
   const month = date.getUTCMonth() + 1;
   const day = date.getUTCDate();
   roomName = `TwinDayBirthdayChat${month}${day}`;
-  chatRoomNameHeader.textContent = `${day}/${month} Doğumlular | Beta Test`;
+  chatRoomNameHeader.textContent = `${day}/${month} Doğumlular | Beta`;
   connectBtn.disabled = true;
   connectBtn.textContent = "Bağlanılıyor...";
 
@@ -474,7 +498,7 @@ const handleConnect = (event) => {
   };
   socket.onclose = () => {
     displaySystemNotification(
-      "Sohbetten bağlantı sorunu oluştu, 7 saniye içinde sayfa yenilenecek.",
+      "Sohbetten bağlantı sorunu oluştu, sayfayı yenileyiniz.",
       "error"
     );
     setTimeout(() => {
@@ -483,12 +507,9 @@ const handleConnect = (event) => {
   };
   socket.onerror = (error) => {
     displaySystemNotification(
-      "Bir bağlantı sorunu oluştu, 7 saniye içinde sayfa yenilenecek.",
+      "Bir bağlantı sorunu oluştu, sayfayı yenileyiniz.",
       "error"
     );
-    setTimeout(() => {
-      location.reload();
-    }, 7000);
   };
 };
 
@@ -504,14 +525,18 @@ const handleStatusCode = async (packet) => {
     } else if (packet.listener === "link") {
       welcomeScreen.style.display = "none";
       chatScreen.style.display = "flex";
-      messageInput.focus();
+
       await FavoritesDB.init();
       initializePeerConnection();
+      const userData = loadUserData();
+      if (userData) {
+        initializeBirthdayCelebration(userData.birthdate, roomName);
+      }
       if (!newsPollingStarted) {
         setTimeout(() => {
           fetchAndDisplayNews();
         }, 5000);
-        setInterval(fetchAndDisplayNews, 120 * 1000);
+        setInterval(fetchAndDisplayNews, 99 * 1000);
         newsPollingStarted = !0;
       }
     } else if (packet.listener === "room_switch_success") {
@@ -519,7 +544,6 @@ const handleStatusCode = async (packet) => {
         `${chatRoomNameHeader.textContent} odasına geçildi.`
       );
       isSwitchingRooms = false;
-      messageInput.focus();
     }
   } else {
     const errorMsg = `Server Error: ${packet.code}. ${
@@ -719,12 +743,148 @@ function startReply(messageId) {
   replyPreviewContent.appendChild(textNode);
 
   replyPreviewArea.style.display = "block";
-  messageInput.focus();
 }
 
 function cancelReply() {
   replyingToMessage = null;
   replyPreviewArea.style.display = "none";
+}
+
+async function sendInboxMessage() {
+  if (!peer || peer.disconnected) {
+    displaySystemNotification(
+      "P2P aktif değil. Mesaj/Dosya gönderilemiyor.",
+      "error"
+    );
+    return;
+  }
+
+  const targetRawId = targetUserIdForCall;
+  if (!targetRawId) {
+    displaySystemNotification("Kullanıcı seçilemedi.", "error");
+    return;
+  }
+
+  const targetPeerId = targetRawId
+    .replace(/[#\s]+/g, "-")
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  const messageText = messageInput.value.trim();
+  if (messageText) {
+    const conn = peer.connect(targetPeerId, {
+      label: "text-message",
+      reliable: true,
+    });
+
+    conn.on("open", () => {
+      const payload = {
+        type: "text-message-request",
+        transferId: "text-" + Date.now() + Math.random(),
+        senderId: myName,
+        content: messageText,
+      };
+      conn.send(payload);
+      displaySystemNotification(
+        `Özel mesajınız "${truncateText(
+          targetRawId.split("#")[0],
+          20
+        )}" kullanıcısına gönderildi.`,
+        "info"
+      );
+      messageInput.value = "";
+      setTimeout(() => conn.close(), 500);
+    });
+
+    conn.on("error", (err) => {
+      displaySystemNotification(
+        `Özel mesaj gönderilemedi. P2P Hatası.`,
+        "error"
+      );
+    });
+  } else {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.style.display = "none";
+    const file = await new Promise((resolve) => {
+      fileInput.onchange = (e) =>
+        resolve(e.target.files.length > 0 ? e.target.files[0] : null);
+      document.body.onfocus = () => {
+        setTimeout(() => {
+          if (fileInput.files.length === 0) resolve(null);
+          document.body.onfocus = null;
+        }, 300);
+      };
+      fileInput.click();
+    });
+
+    if (!file) {
+      displaySystemNotification("Dosya seçimi iptal edildi.", "info");
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      displaySystemNotification(
+        `Dosya boyutu çok büyük Maksimum ${
+          MAX_FILE_SIZE_BYTES / 1024 / 1024
+        }mb.`,
+        "error"
+      );
+      return;
+    }
+
+    const conn = peer.connect(targetPeerId, {
+      label: "file-transfer",
+      reliable: true,
+    });
+
+    conn.on("open", async () => {
+      const transferId = "transfer-" + Date.now() + Math.random();
+      const fileReader = new FileReader();
+      fileReader.onload = (e) => {
+        const base64Data = e.target.result;
+        const totalChunks = Math.ceil(base64Data.length / CHUNK_SIZE);
+
+        conn.send({
+          type: "file-transfer-start",
+          transferId: transferId,
+          senderId: myName,
+          fileInfo: {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            totalChunks: totalChunks,
+          },
+        });
+
+        for (let i = 0; i < totalChunks; i++) {
+          const chunk = base64Data.substring(
+            i * CHUNK_SIZE,
+            (i + 1) * CHUNK_SIZE
+          );
+          conn.send({
+            type: "file-chunk",
+            transferId: transferId,
+            chunkIndex: i,
+            data: chunk,
+          });
+        }
+
+        conn.send({ type: "file-transfer-end", transferId: transferId });
+        displaySystemNotification(`${file.name} gönderildi.`, "info");
+      };
+      fileReader.onerror = () => {
+        displaySystemNotification("Dosya okunurken bir hata oluştu.", "error");
+        conn.close();
+      };
+      fileReader.readAsDataURL(file);
+    });
+
+    conn.on("error", (err) => {
+      displaySystemNotification(`Dosya gönderilemedi. P2P Hatası.`, "error");
+    });
+  }
 }
 
 const handleSendMessage = async (event) => {
@@ -736,6 +896,20 @@ const handleSendMessage = async (event) => {
   const helpRegex = /^t\.(\s*|help)$/i;
   if (helpRegex.test(messageText)) {
     displayHelpMessage();
+    messageInput.value = "";
+    return;
+  }
+
+  const callToggleRegex = /^t\.call$/i;
+  if (callToggleRegex.test(messageText)) {
+    toggleCallsFeature();
+    messageInput.value = "";
+    return;
+  }
+
+  const inboxToggleRegex = /^t\.(inbox|ibx)$/i;
+  if (inboxToggleRegex.test(messageText)) {
+    toggleInboxFeature();
     messageInput.value = "";
     return;
   }
@@ -754,16 +928,13 @@ const handleSendMessage = async (event) => {
     return;
   }
 
-  const callCloseRegex = /^t\.(callclose|clcs)$/i;
-  if (callCloseRegex.test(messageText)) {
-    disableCalls();
-    messageInput.value = "";
-    return;
-  }
-
-  const callOpenRegex = /^t\.(callopen|clo)$/i;
-  if (callOpenRegex.test(messageText)) {
-    enableCalls();
+  const callToggleRegexLegacy = /^t\.(p2p|p2)$/i;
+  if (callToggleRegexLegacy.test(messageText)) {
+    if (!peer || peer.destroyed) {
+      enableP2P();
+    } else {
+      disableP2P();
+    }
     messageInput.value = "";
     return;
   }
@@ -941,8 +1112,13 @@ async function processMessageContent(content) {
   return { text: processedText.trim(), images: imageUrls };
 }
 
-const displayMessage = async (data, isSentByMe, isOfficial = false) => {
-  const { text, images } = await processMessageContent(data.content);
+const displayMessage = async (
+  data,
+  isSentByMe,
+  isOfficial,
+  isPrivate = false
+) => {
+  const { text, images } = await processMessageContent(data.content || "");
   if (!text && images.length === 0 && !data.file && !data.reply) return;
 
   const messageDiv = document.createElement("div");
@@ -952,6 +1128,10 @@ const displayMessage = async (data, isSentByMe, isOfficial = false) => {
   );
   messageDiv.id = data.id || "msg-" + Date.now();
   messageDiv.dataset.senderId = data.sender;
+
+  if (isPrivate) {
+    messageDiv.classList.add("message-private");
+  }
 
   if (isSentByMe) {
     messageSendSound.play();
@@ -968,10 +1148,15 @@ const displayMessage = async (data, isSentByMe, isOfficial = false) => {
     const displayName = truncateText(senderName, 33);
     const header = document.createElement("strong");
     header.classList.add("message-header");
-    header.textContent = `${displayName} | ${new Date().toLocaleTimeString(
-      "tr-TR",
-      { hour: "2-digit", minute: "2-digit" }
-    )}`;
+
+    if (isPrivate) {
+      header.innerHTML = `${displayName} | <span class="subtle-note">Bu mesajı sadece siz görebilirsiniz.</span>`;
+    } else {
+      header.textContent = `${displayName} | ${new Date().toLocaleTimeString(
+        "tr-TR",
+        { hour: "2-digit", minute: "2-digit" }
+      )}`;
+    }
     messageDiv.appendChild(header);
 
     if (isOfficial) {
@@ -987,8 +1172,11 @@ const displayMessage = async (data, isSentByMe, isOfficial = false) => {
     replyContainer.className = "message-reply-container";
     const replySender = document.createElement("strong");
     replySender.className = "message-reply-sender";
+    const sanitizedSenderName = DOMPurify.sanitize(data.reply.originalSender, {
+      USE_PROFILES: { html: false },
+    });
     replySender.innerHTML = `<i class="fa-solid fa-reply"></i> ${truncateText(
-      data.reply.originalSender,
+      sanitizedSenderName,
       33
     )}`;
     const replyContent = document.createElement("div");
@@ -1026,6 +1214,7 @@ const displayMessage = async (data, isSentByMe, isOfficial = false) => {
   }
 
   if (data.file) {
+    messageDiv.dataset.filePayload = JSON.stringify(data.file);
     const { name, type, data_base64 } = data.file;
     const senderName = data.sender.split("#")[0];
     const isBlocked = BLOCKED_EXTENSIONS.some((ext) =>
@@ -1034,10 +1223,10 @@ const displayMessage = async (data, isSentByMe, isOfficial = false) => {
 
     if (isBlocked && !isSentByMe) {
       displaySystemNotification(
-        `'${truncateText(
+        `${truncateText(
           senderName,
           33
-        )}' kullanıcısından gelen riskli dosya engellendi.`
+        )} Kullanıcısından gelen riskli dosya engellendi.`
       );
       return;
     }
@@ -1048,63 +1237,9 @@ const displayMessage = async (data, isSentByMe, isOfficial = false) => {
       imgContainer.innerHTML = `<img src="${data_base64}" class="message-image" alt="${name}" loading="lazy"/>`;
       messageDiv.appendChild(imgContainer);
     } else if (ALLOWED_MIME_PATTERNS.audio.test(type)) {
-      const playerContainer = document.createElement("div");
-      playerContainer.className = "custom-audio-player";
-      const audioElement = document.createElement("audio");
-      audioElement.src = data_base64;
-      audioElement.style.display = "none";
-      const playBtn = document.createElement("button");
-      playBtn.className = "play-pause-btn";
-      playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-      const progressContainer = document.createElement("div");
-      progressContainer.className = "audio-progress-container";
-      const slider = document.createElement("input");
-      slider.type = "range";
-      slider.className = "seek-slider";
-      slider.value = 0;
-      slider.max = 100;
-      const timeInfo = document.createElement("div");
-      timeInfo.className = "audio-time-info";
-      const currentTimeEl = document.createElement("span");
-      currentTimeEl.textContent = "0:00";
-      const durationEl = document.createElement("span");
-      durationEl.textContent = "0:00";
-      timeInfo.append(currentTimeEl, durationEl);
-      progressContainer.append(slider, timeInfo);
-      playerContainer.append(playBtn, progressContainer, audioElement);
-      messageDiv.appendChild(playerContainer);
-
-      playBtn.addEventListener("click", () => {
-        if (audioElement.paused) {
-          audioElement.play();
-          playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-        } else {
-          audioElement.pause();
-          playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-        }
-      });
-      audioElement.addEventListener("loadedmetadata", () => {
-        durationEl.textContent = formatTime(audioElement.duration);
-        slider.max = audioElement.duration;
-      });
-      audioElement.addEventListener("timeupdate", () => {
-        currentTimeEl.textContent = formatTime(audioElement.currentTime);
-        slider.value = audioElement.currentTime;
-      });
-      audioElement.addEventListener("ended", () => {
-        playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-        slider.value = 0;
-      });
-      slider.addEventListener("input", () => {
-        audioElement.currentTime = slider.value;
-      });
+      messageDiv.appendChild(createCustomAudioPlayer(data_base64));
     } else if (ALLOWED_MIME_PATTERNS.video.test(type)) {
-      const video = document.createElement("video");
-      video.src = data_base64;
-      video.controls = true;
-      video.style.cssText =
-        "width: 100%; max-width: 280px; border-radius: 15px; margin-top: 8px;";
-      messageDiv.appendChild(video);
+      messageDiv.appendChild(createCustomVideoPlayer(data_base64));
     } else {
       const fileContainer = document.createElement("div");
       fileContainer.className = "message-file-container";
@@ -1169,11 +1304,12 @@ function displayHelpMessage() {
   const commands = [
     { cmd: "t.help", desc: "Yardım menüsünü gösterir." },
     { cmd: "t.clear", alias: "t.clr", desc: "Sohbet ekranını temizler." },
-    { cmd: "t.callopen", alias: "t.clo", desc: "Aramaları aktif eder." },
+    { cmd: "t.p2p", alias: "t.p2", desc: "P2P'ı Açar veya Kapatır." },
+    { cmd: "t.call", alias: " - ", desc: "Aramaları Açar veya Kapatır." },
     {
-      cmd: "t.callclose",
-      alias: "t.clcs",
-      desc: "Aramaları deaktif eder.",
+      cmd: "t.inbox",
+      alias: "t.ibx",
+      desc: "Gelen Kutusunu Açar veya Kapatır.",
     },
     { cmd: "t.party", alias: "t.pty", desc: "Konfeti patlatır." },
     {
@@ -1280,6 +1416,67 @@ function fadeAndStop(audioElement, duration = 300) {
     }, 50);
   });
 }
+
+document.addEventListener("mouseover", (e) => {
+  const targetMessage = e.target.closest(".message");
+  if (targetMessage) {
+    isMouseOverMessage = true;
+    lastHoveredMessageId = targetMessage.id;
+  }
+});
+
+document.addEventListener("mouseout", (e) => {
+  const targetMessage = e.target.closest(".message");
+  if (targetMessage) {
+    isMouseOverMessage = false;
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  const isInputFocused = document.activeElement === messageInput;
+  const isModalVisible = dynamicModal.classList.contains("show");
+
+  if (isModalVisible) return;
+
+  if (e.ctrlKey && e.key.toLowerCase() === "f") {
+    e.preventDefault();
+
+    const isActive = favoritesPanel.classList.toggle("active");
+    if (isActive) {
+      renderFavoritesPanel();
+    }
+
+    actionsPopup.classList.remove("visible");
+    addButton.classList.remove("active");
+    inboxPanel.classList.remove("active");
+    return;
+  }
+
+  if (e.ctrlKey && e.key.toLowerCase() === "b") {
+    e.preventDefault();
+
+    const isActive = inboxPanel.classList.toggle("active");
+    if (isActive) {
+      renderInboxPanel();
+      updateInboxUI(false);
+    }
+
+    actionsPopup.classList.remove("visible");
+    addButton.classList.remove("active");
+    favoritesPanel.classList.remove("active");
+    return;
+  }
+
+  if (!isInputFocused) {
+    if (e.key.length === 1 || e.key === " " || e.key === "Enter") {
+      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+        }
+      }
+    }
+  }
+});
 
 function showDownloadConfirmation(fileData) {
   let countdown = 5;
@@ -1475,21 +1672,171 @@ function stopCallTimer() {
   timerInterval = null;
 }
 
-async function handleIncomingData(data) {
-  if (data.type === "hangup") {
-    const isRejected =
-      callPanel.classList.contains("visible") &&
-      !callPanel.classList.contains("in-call");
-    if (isRejected) {
-      callerNameDiv.textContent = "Arama sonlandırıldı.";
-      await playSound(callEndSound);
-    }
-    hangupLogic(false);
+async function handleIncomingData(data, senderPeerId) {
+  if (data.type?.startsWith("file-transfer-") && !areInboxEnabled) {
+    console.log(`Gelen dosya transferi yoksayıldı (Gelen Kutusu kapalı).`);
+    return;
+  }
+
+  const now = Date.now();
+  if (!p2pSpamTracker.has(senderPeerId)) {
+    p2pSpamTracker.set(senderPeerId, {
+      timestamps: [],
+      isThrottled: false,
+      throttleEndTime: 0,
+    });
+  }
+
+  const userData = p2pSpamTracker.get(senderPeerId);
+  if (userData.isThrottled && now > userData.throttleEndTime) {
+    userData.isThrottled = false;
+    userData.timestamps = [];
+    const displayName = senderPeerId.split("-")[0];
+    displaySystemNotification(
+      `${truncateText(
+        displayName,
+        33
+      )} kullanıcısının P2P yavaşlatması kaldırıldı.`
+    );
+  }
+
+  if (userData.isThrottled) {
+    return;
+  }
+
+  userData.timestamps.push(now);
+  userData.timestamps = userData.timestamps.filter(
+    (ts) => now - ts < P2P_SPAM_WINDOW_MS
+  );
+
+  if (userData.timestamps.length > P2P_SPAM_THRESHOLD) {
+    userData.isThrottled = true;
+    userData.throttleEndTime = now + P2P_COOLDOWN_DURATION_MS;
+    userData.timestamps = [];
+
+    const displayName = senderPeerId.split("-")[0];
+    displaySystemNotification(
+      `${truncateText(
+        displayName,
+        33
+      )} kullanıcısı P2P üzerinden spam yaptığı için 1 dakika boyunca engellendi.`,
+      "error"
+    );
+
+    return;
+  }
+
+  if (
+    (data.type?.startsWith("file-transfer-") ||
+      data.type === "text-message-request") &&
+    !areInboxEnabled
+  ) {
+    console.log(`Gelen istek yoksayıldı (Gelen Kutusu kapalı).`);
+    return;
+  }
+
+  switch (data.type) {
+    case "text-message-request":
+      inboxRequests.set(data.transferId, data);
+      updateInboxUI(true);
+      if (inboxPanel.classList.contains("active")) {
+        renderInboxPanel();
+      }
+      break;
+
+    case "file-transfer-request":
+      inboxRequests.set(data.transferId, data);
+      updateInboxUI(true);
+      if (inboxPanel.classList.contains("active")) {
+        renderInboxPanel();
+      }
+      break;
+
+    case "file-transfer-start":
+      const MAX_CHUNKS = Math.ceil(MAX_FILE_SIZE_BYTES / CHUNK_SIZE) + 1;
+      if (
+        data.fileInfo.size > MAX_FILE_SIZE_BYTES ||
+        !Number.isInteger(data.fileInfo.totalChunks) ||
+        data.fileInfo.totalChunks <= 0 ||
+        data.fileInfo.totalChunks > MAX_CHUNKS
+      ) {
+        console.warn("Invalid file transfer start packet received.");
+        return;
+      }
+      incomingFileTransfers.set(data.transferId, {
+        fileInfo: data.fileInfo,
+        chunks: new Array(data.fileInfo.totalChunks),
+        receivedChunks: 0,
+        senderId: data.senderId,
+      });
+      break;
+
+    case "file-chunk":
+      const transfer = incomingFileTransfers.get(data.transferId);
+      if (transfer && !transfer.chunks[data.chunkIndex]) {
+        transfer.chunks[data.chunkIndex] = data.data;
+        transfer.receivedChunks++;
+      }
+      break;
+
+    case "file-transfer-end":
+      const finishedTransfer = incomingFileTransfers.get(data.transferId);
+      if (
+        finishedTransfer &&
+        finishedTransfer.receivedChunks ===
+          finishedTransfer.fileInfo.totalChunks
+      ) {
+        try {
+          const fileContent = finishedTransfer.chunks.join("");
+          const fullFilePayload = {
+            name: finishedTransfer.fileInfo.name,
+            type: finishedTransfer.fileInfo.type,
+            data_base64: fileContent,
+          };
+          const requestData = {
+            transferId: data.transferId,
+            senderId: finishedTransfer.senderId,
+            file: fullFilePayload,
+          };
+
+          inboxRequests.set(data.transferId, requestData);
+          updateInboxUI(true);
+          if (inboxPanel.classList.contains("active")) {
+            renderInboxPanel();
+          }
+        } catch (e) {
+          displaySystemNotification(
+            "Dosya birleştirilirken bir hata oluştu.",
+            "error"
+          );
+        }
+      } else if (finishedTransfer) {
+        displaySystemNotification(
+          `${finishedTransfer.fileInfo.name} adlı dosyanın alımı başarısız oldu.`,
+          "error"
+        );
+      }
+      incomingFileTransfers.delete(data.transferId);
+      break;
+
+    case "hangup":
+      const isRejected =
+        callPanel.classList.contains("visible") &&
+        !callPanel.classList.contains("in-call");
+      if (isRejected) {
+        callerNameDiv.textContent = "Arama sonlandırıldı.";
+        await playSound(callEndSound);
+      }
+      hangupLogic(false);
+      break;
   }
 }
 
 function setupDataConnectionEvents(conn) {
-  conn.on("data", handleIncomingData);
+  conn.on("data", (data) => {
+    handleIncomingData(data, conn.peer);
+  });
+
   conn.on("close", () => {
     if (currentCall && currentCall.peer === conn.peer) {
       hangupLogic(false);
@@ -1501,16 +1848,14 @@ function setupDataConnectionEvents(conn) {
 function initializePeerEvents(p) {
   p.on("open", (id) => {
     reconnectAttempts = 0;
-    displaySystemNotification(
-      "Arama özelliği aktif. Kapatmak için 't.callclose' yazın."
-    );
+    displaySystemNotification("P2P Açıldı.");
     spamTracker = {};
   });
 
   p.on("error", (err) => {
     if (err.type === "peer-unavailable") {
       displaySystemNotification(
-        "Aranan kullanıcı bulunamadı, çevrimdışı veya aramalara kapalı.",
+        "Hedef kullanıcı bulunamadı, çevrimdışı veya P2P'e kapalı.",
         "error"
       );
       if (currentCall) {
@@ -1522,8 +1867,15 @@ function initializePeerEvents(p) {
   p.on("disconnected", handlePeerDisconnect);
 
   p.on("call", (incomingCall) => {
+    if (!areCallsEnabled) {
+      incomingCall.close();
+      console.log("Gelen arama reddedildi (Aramalar kapalı).");
+      return;
+    }
+
     const isPermanentlyDisabled =
       localStorage.getItem(CALLS_DISABLED_KEY) === "true";
+
     if (callsDisabledForSession || isPermanentlyDisabled || isCallActive) {
       incomingCall.close();
       return;
@@ -1545,17 +1897,15 @@ function initializePeerEvents(p) {
   });
 
   p.on("connection", (conn) => {
-    if (currentCall || dataConnection) {
-      conn.on("open", () => {
+    conn.on("open", () => {
+      if (currentCall && conn.label !== "file-transfer") {
         conn.send({ type: "status", message: "busy" });
-        setTimeout(() => {
-          conn.close();
-        }, 250);
-      });
-      return;
-    }
-    reconnectAttempts = 0;
-    setupDataConnectionEvents(conn);
+        setTimeout(() => conn.close(), 250);
+        return;
+      }
+      reconnectAttempts = 0;
+      setupDataConnectionEvents(conn);
+    });
   });
 }
 
@@ -1647,7 +1997,7 @@ async function hangupLogic(sendHangupSignal = true) {
 async function initiateCall(targetRawId) {
   if (isCallActive) {
     displaySystemNotification(
-      "Lütfen mevcut arama işleminin bitmesini bekleyin.",
+      "Lütfen mevcut görüşmenin bitmesini bekleyin.",
       "info"
     );
     return;
@@ -1695,7 +2045,7 @@ async function initiateCall(targetRawId) {
           `${truncateText(
             targetDisplayName,
             33
-          )} adlı kullanıcı şu anda başka bir meşgul.`,
+          )} Adlı kullanıcı şu anda meşgul.`,
           "info"
         );
         playSound(callEndSound);
@@ -1723,10 +2073,7 @@ function initializePeerConnection() {
   const shouldEnableCalls = callsEnabledSetting !== "false";
 
   if (!shouldEnableCalls) {
-    displaySystemNotification(
-      "Arama özelliği kapalı. Açmak için 't.callopen' yazın.",
-      "info"
-    );
+    displaySystemNotification("P2P Kapatıldı.", "info");
     callsDisabledForSession = true;
     return;
   }
@@ -1756,6 +2103,7 @@ addButton.addEventListener("click", (e) => {
   actionsPopup.classList.toggle("visible");
   addButton.classList.toggle("active");
   favoritesPanel.classList.remove("active");
+  inboxPanel.classList.remove("active");
 });
 
 uploadFileBtn.addEventListener("click", () => {
@@ -1802,6 +2150,18 @@ document.addEventListener("click", (e) => {
 
   const menu = document.getElementById("context-menu");
   const targetMessage = e.target.closest(".message-received");
+
+  if (e.shiftKey && targetMessage) {
+    clearTimeout(clickTimer);
+    clickCount = 0;
+    targetUserIdForCall = targetMessage.dataset.senderId;
+    contextMenuTargetMessageId = targetMessage.id;
+    if (targetUserIdForCall) {
+      menuJustOpened = true;
+      showMenuAt(e.clientX, e.clientY);
+    }
+    return;
+  }
 
   if (targetMessage) {
     clickCount++;
@@ -1874,15 +2234,6 @@ window.addEventListener("DOMContentLoaded", () => {
   applyTheme(savedTheme);
 });
 
-window.addEventListener("load", () => {
-  checkScreenSize();
-  if (loadUserData()) {
-    previousUserDiv.style.display = "block";
-  }
-  checkFormValidity();
-  displaySystemNotification("Komutlar için 't.help yazabilirsiniz.'");
-});
-
 window.addEventListener("resize", checkScreenSize);
 
 nameInput.addEventListener("input", checkFormValidity);
@@ -1904,6 +2255,13 @@ callUserBtn.addEventListener("click", () => {
 document.getElementById("replyUser").addEventListener("click", () => {
   if (contextMenuTargetMessageId) {
     startReply(contextMenuTargetMessageId);
+  }
+  document.getElementById("context-menu").style.display = "none";
+});
+
+document.getElementById("sendInboxUser").addEventListener("click", () => {
+  if (contextMenuTargetMessageId) {
+    sendInboxMessage(contextMenuTargetMessageId);
   }
   document.getElementById("context-menu").style.display = "none";
 });
@@ -1963,7 +2321,7 @@ declineCallBtn.addEventListener("click", () => {
 
 function switchToGlobalChat() {
   const newRoomName = "TwinDayBirthdayChatGLOBAL";
-  const displayRoomName = "Global Sohbet | Beta Test";
+  const displayRoomName = "Global Sohbet | Beta";
   switchRoom(newRoomName, displayRoomName);
 }
 
@@ -1981,7 +2339,7 @@ function switchToBirthdayChat() {
   const month = date.getUTCMonth() + 1;
   const day = date.getUTCDate();
   const newRoomName = `TwinDayBirthdayChat${month}${day}`;
-  const displayRoomName = `${day}/${month} Doğumlular | Beta Test`;
+  const displayRoomName = `${day}/${month} Doğumlular | Beta`;
 
   switchRoom(newRoomName, displayRoomName);
 }
@@ -2015,7 +2373,7 @@ function switchRoom(newRoomName, displayRoomName) {
   });
 }
 
-function disableCalls() {
+function disableP2P() {
   if (peer && !peer.destroyed) {
     peer.destroy();
   }
@@ -2025,14 +2383,14 @@ function disableCalls() {
   localStorage.setItem(CALLS_ENABLED_KEY, "false");
 
   displaySystemNotification(
-    "Arama özelliği kapatıldı. Açmak için 't.callopen' yazın.",
+    "P2P sistemi kapatıldı. Aramalar ve Gelen Kutusu devre dışı.",
     "info"
   );
 }
 
-function enableCalls() {
-  if (peer) {
-    displaySystemNotification("Arama özelliği zaten açık.", "info");
+function enableP2P() {
+  if (peer && !peer.destroyed) {
+    displaySystemNotification("P2P sistemi zaten açık.", "info");
     return;
   }
 
@@ -2040,4 +2398,561 @@ function enableCalls() {
 
   initializePeerConnection();
   callsDisabledForSession = false;
+}
+
+function updateInboxUI(hasNew = false) {
+  if (hasNew) {
+    inboxButton.classList.add("has-notification");
+  }
+
+  if (inboxRequests.size === 0) {
+    inboxButton.classList.remove("has-notification");
+  }
+}
+
+function renderInboxPanel() {
+  inboxContent.innerHTML = "";
+  inboxPanel.style.display = "";
+  inboxPanel.style.justifyContent = "";
+
+  if (inboxRequests.size === 0) {
+    inboxContent.innerHTML = `
+            <div class="favorites-empty-state">
+              <i class="fa-regular fa-envelope-open"></i>
+              <span>Gelen Kutunuz Boş</span>
+            </div>`;
+    inboxPanel.style.display = "flex";
+    inboxPanel.style.justifyContent = "center";
+    updateInboxUI(false);
+  } else {
+    const list = document.createElement("div");
+    list.className = "inbox-list";
+
+    inboxRequests.forEach((req, id) => {
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "inbox-item";
+      const senderName = DOMPurify.sanitize(req.senderId.split("#")[0]);
+
+      let requestInfoHTML = "";
+
+      if (req.file) {
+        const fileName = DOMPurify.sanitize(req.file.name);
+        requestInfoHTML = `
+                  <div class="inbox-item-info">
+                    <strong class="inbox-item-sender">${truncateText(
+                      senderName,
+                      20
+                    )}</strong>
+                    <span class="inbox-item-file">${truncateText(
+                      fileName,
+                      25
+                    )}</span>
+                  </div>`;
+      } else if (req.content) {
+        const messagePreview = DOMPurify.sanitize(req.content, {
+          USE_PROFILES: { html: false },
+        });
+        requestInfoHTML = `
+                  <div class="inbox-item-info">
+                    <strong class="inbox-item-sender">${truncateText(
+                      senderName,
+                      20
+                    )} size özel bir mesaj gönderdi.</strong>
+                    <span class="inbox-item-file">${truncateText(
+                      messagePreview,
+                      35
+                    )}</span>
+                  </div>`;
+      }
+
+      itemDiv.innerHTML = `
+              ${requestInfoHTML}
+              <div class="inbox-item-actions">
+                <button class="inbox-accept-btn" data-id="${id}"><i class="fa-solid fa-check"></i></button>
+                <button class="inbox-decline-btn" data-id="${id}"><i class="fa-solid fa-times"></i></button>
+              </div>
+            `;
+      list.appendChild(itemDiv);
+    });
+    inboxContent.appendChild(list);
+  }
+}
+
+function acceptInboxItem(transferId) {
+  const request = inboxRequests.get(transferId);
+  if (request) {
+    const messagePayload = {
+      sender: request.senderId,
+      content: request.content || "",
+      file: request.file || null,
+      timestamp: new Date().toISOString(),
+    };
+
+    displayMessage(messagePayload, false, false, true);
+
+    inboxRequests.delete(transferId);
+    renderInboxPanel();
+  }
+}
+
+function declineFileTransfer(transferId) {
+  inboxRequests.delete(transferId);
+  renderInboxPanel();
+}
+
+inboxButton.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isActive = inboxPanel.classList.toggle("active");
+  if (isActive) {
+    renderInboxPanel();
+    updateInboxUI(false);
+  }
+  favoritesPanel.classList.remove("active");
+  actionsPopup.classList.remove("visible");
+  addButton.classList.remove("active");
+});
+
+document.addEventListener("click", (e) => {
+  if (!inboxPanel.contains(e.target) && !inboxButton.contains(e.target)) {
+    inboxPanel.classList.remove("active");
+  }
+
+  const target = e.target.closest("button");
+  if (target) {
+    if (target.classList.contains("inbox-accept-btn")) {
+      acceptInboxItem(target.dataset.id);
+    } else if (target.classList.contains("inbox-decline-btn")) {
+      declineFileTransfer(target.dataset.id);
+    }
+  }
+});
+
+inboxPanel.addEventListener("transitionend", () => {
+  if (!inboxPanel.classList.contains("active")) {
+    inboxContent.innerHTML = "";
+  }
+});
+
+function initializeFeatureStates() {
+  const callsStored = localStorage.getItem(CALLS_FEATURE_ENABLED_KEY);
+  const inboxStored = localStorage.getItem(INBOX_FEATURE_ENABLED_KEY);
+
+  areCallsEnabled = callsStored !== "false";
+  areInboxEnabled = inboxStored !== "false";
+
+  if (callsStored === null) {
+    localStorage.setItem(CALLS_FEATURE_ENABLED_KEY, "true");
+  }
+  if (inboxStored === null) {
+    localStorage.setItem(INBOX_FEATURE_ENABLED_KEY, "true");
+  }
+}
+
+window.addEventListener("load", () => {
+  initializeFeatureStates();
+  checkScreenSize();
+  if (loadUserData()) {
+    previousUserDiv.style.display = "block";
+  }
+  checkFormValidity();
+  displaySystemNotification("Komutlar için 't.help' yazabilirsiniz.");
+});
+
+function toggleCallsFeature() {
+  areCallsEnabled = !areCallsEnabled;
+  localStorage.setItem(CALLS_FEATURE_ENABLED_KEY, areCallsEnabled);
+  displaySystemNotification(
+    `Aramalar şimdi ${areCallsEnabled ? "Açık" : "Kapalı"}.`
+  );
+}
+
+function toggleInboxFeature() {
+  areInboxEnabled = !areInboxEnabled;
+  localStorage.setItem(INBOX_FEATURE_ENABLED_KEY, areInboxEnabled);
+  displaySystemNotification(
+    `Gelen Kutusu şimdi ${areInboxEnabled ? "Açık" : "Kapalı"}.`
+  );
+}
+
+function createCustomAudioPlayer(data_base64) {
+  const playerContainer = document.createElement("div");
+  playerContainer.className = "custom-audio-player";
+  const audioElement = document.createElement("audio");
+  audioElement.src = data_base64;
+  audioElement.style.display = "none";
+
+  const playBtn = document.createElement("button");
+  playBtn.className = "play-pause-btn";
+  playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+
+  const progressContainer = document.createElement("div");
+  progressContainer.className = "audio-progress-container";
+  const slider = document.createElement("input");
+  slider.type = "range";
+  slider.className = "seek-slider";
+  slider.value = 0;
+  slider.max = 100;
+
+  const timeInfo = document.createElement("div");
+  timeInfo.className = "audio-time-info";
+  const currentTimeEl = document.createElement("span");
+  currentTimeEl.textContent = "0:00";
+  const durationEl = document.createElement("span");
+  durationEl.textContent = "0:00";
+  timeInfo.append(currentTimeEl, durationEl);
+
+  progressContainer.append(slider, timeInfo);
+  playerContainer.append(playBtn, progressContainer, audioElement);
+
+  playBtn.addEventListener("click", () => {
+    if (audioElement.paused) {
+      audioElement.play();
+      playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    } else {
+      audioElement.pause();
+      playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+    }
+  });
+  audioElement.addEventListener("loadedmetadata", () => {
+    durationEl.textContent = formatTime(audioElement.duration);
+    slider.max = audioElement.duration;
+  });
+  audioElement.addEventListener("timeupdate", () => {
+    currentTimeEl.textContent = formatTime(audioElement.currentTime);
+    slider.value = audioElement.currentTime;
+    slider.style.setProperty(
+      "--seek-before-width",
+      `${(slider.value / slider.max) * 100}%`
+    );
+  });
+  audioElement.addEventListener("ended", () => {
+    playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+    slider.value = 0;
+    currentTimeEl.textContent = "0:00";
+    slider.style.setProperty("--seek-before-width", "0%");
+  });
+  slider.addEventListener("input", () => {
+    audioElement.currentTime = slider.value;
+  });
+
+  return playerContainer;
+}
+
+document.getElementById("deleteMessage").addEventListener("click", () => {
+  if (contextMenuTargetMessageId) {
+    const messageToDelete = document.getElementById(contextMenuTargetMessageId);
+
+    if (messageToDelete) {
+      messageToDelete.classList.add("message-deleting");
+      setTimeout(() => {
+        const imageInMessage = messageToDelete.querySelector(".message-image");
+        if (imageInMessage) {
+          imageObserver.unobserve(imageInMessage);
+        }
+        messageToDelete.remove();
+        totalMessageCount--;
+      }, 230);
+    }
+  }
+  document.getElementById("context-menu").style.display = "none";
+  contextMenuTargetMessageId = null;
+});
+
+function createCustomVideoPlayer(data_base64) {
+  const container = document.createElement("div");
+  container.className = "custom-video-container";
+  const video = document.createElement("video");
+  video.src = data_base64;
+  video.preload = "metadata";
+  const controls = document.createElement("div");
+  controls.className = "video-controls";
+  const progressBar = document.createElement("div");
+  progressBar.className = "video-progress-bar";
+  const progressFilled = document.createElement("div");
+  progressFilled.className = "video-progress-filled";
+  progressBar.appendChild(progressFilled);
+  const actionBar = document.createElement("div");
+  actionBar.className = "video-action-bar";
+  const leftControls = document.createElement("div");
+  leftControls.className = "video-left-controls";
+  const playPauseBtn = document.createElement("button");
+  playPauseBtn.className = "video-play-pause-btn";
+  playPauseBtn.innerHTML = `<i class="fa-solid fa-play"></i>`;
+  const timeDisplay = document.createElement("span");
+  timeDisplay.className = "video-time-display";
+  timeDisplay.textContent = "0:00 / 0:00";
+  leftControls.append(playPauseBtn, timeDisplay);
+  const rightControls = document.createElement("div");
+  rightControls.className = "video-right-controls";
+  const fullscreenBtn = document.createElement("button");
+  fullscreenBtn.className = "video-fullscreen-btn";
+  fullscreenBtn.innerHTML = `<i class="fa-solid fa-expand"></i>`;
+  rightControls.append(fullscreenBtn);
+  actionBar.append(leftControls, rightControls);
+  controls.append(progressBar, actionBar);
+  container.append(video, controls);
+
+  const togglePlay = () => {
+    if (video.paused) {
+      video.play();
+      playPauseBtn.innerHTML = `<i class="fa-solid fa-pause"></i>`;
+    } else {
+      video.pause();
+      playPauseBtn.innerHTML = `<i class="fa-solid fa-play"></i>`;
+    }
+  };
+  playPauseBtn.addEventListener("click", togglePlay);
+  video.addEventListener("click", togglePlay);
+
+  const updateProgress = () => {
+    const progressPercent = (video.currentTime / video.duration) * 100;
+    progressFilled.style.width = `${progressPercent}%`;
+    timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(
+      video.duration
+    )}`;
+  };
+  video.addEventListener("timeupdate", updateProgress);
+  video.addEventListener("loadedmetadata", () => {
+    timeDisplay.textContent = `0:00 / ${formatTime(video.duration)}`;
+  });
+
+  const setVideoProgress = (e) => {
+    const rect = progressBar.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const progressTime = (offsetX / progressBar.offsetWidth) * video.duration;
+    video.currentTime = progressTime;
+  };
+
+  let isScrubbing = false;
+  progressBar.addEventListener("mousedown", (e) => {
+    isScrubbing = true;
+    setVideoProgress(e);
+  });
+  document.addEventListener("mousemove", (e) => {
+    if (isScrubbing) {
+      e.preventDefault();
+      setVideoProgress(e);
+    }
+  });
+  document.addEventListener("mouseup", () => {
+    isScrubbing = false;
+  });
+
+  fullscreenBtn.addEventListener("click", () => {
+    if (!document.fullscreenElement) {
+      container.requestFullscreen();
+      fullscreenBtn.innerHTML = `<i class="fa-solid fa-compress"></i>`;
+    } else {
+      document.exitFullscreen();
+      fullscreenBtn.innerHTML = `<i class="fa-solid fa-expand"></i>`;
+    }
+  });
+
+  let controlsTimeout;
+  const showControls = () => {
+    controls.classList.add("visible");
+    clearTimeout(controlsTimeout);
+    controlsTimeout = setTimeout(() => {
+      if (!video.paused) controls.classList.remove("visible");
+    }, 3000);
+  };
+  container.addEventListener("mousemove", showControls);
+  container.addEventListener("mouseleave", () => {
+    if (!video.paused) controls.classList.remove("visible");
+  });
+  video.addEventListener("play", showControls);
+  video.addEventListener("pause", () => {
+    clearTimeout(controlsTimeout);
+    controls.classList.add("visible");
+  });
+  video.addEventListener("ended", () => {
+    playPauseBtn.innerHTML = `<i class="fa-solid fa-play"></i>`;
+  });
+
+  return container;
+}
+
+function parseRoomDate(roomName) {
+  const match = roomName.match(/(\d{2})(\d{2})$/);
+  if (match) {
+    const month = parseInt(match[1], 10) - 1;
+    const day = parseInt(match[2], 10);
+    const today = new Date();
+
+    return new Date(today.getFullYear(), month, day);
+  }
+  return null;
+}
+
+function isUsersBirthdayToday(birthdateString, roomDate) {
+  try {
+    const userBday = new Date(birthdateString + "T00:00:00");
+    return (
+      userBday.getUTCMonth() === roomDate.getMonth() &&
+      userBday.getUTCDate() === roomDate.getDate()
+    );
+  } catch (e) {
+    return false;
+  }
+}
+
+async function initializeBirthdayCelebration(userBirthdate, roomName) {
+  const roomDate = parseRoomDate(roomName);
+  if (!roomDate) return;
+
+  let authoritativeTime;
+  try {
+    const response = await fetch(
+      "https://worldtimeapi.org/api/timezone/Turkey"
+    );
+    if (!response.ok) throw new Error("API request failed");
+    const data = await response.json();
+    authoritativeTime = new Date(data.datetime);
+  } catch (error) {
+    console.warn(
+      "Authoritative time could not be fetched, falling back to local time.",
+      error
+    );
+    authoritativeTime = new Date();
+  }
+
+  const clientTimeOnResponse = Date.now();
+  let celebrationTriggered = false;
+
+  const timerInterval = setInterval(() => {
+    if (celebrationTriggered) {
+      clearInterval(timerInterval);
+      return;
+    }
+
+    const elapsed = Date.now() - clientTimeOnResponse;
+    const now = new Date(authoritativeTime.getTime() + elapsed);
+
+    if (
+      now.getMonth() !== roomDate.getMonth() ||
+      now.getDate() !== roomDate.getDate()
+    ) {
+      return;
+    }
+
+    const midnight = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+      0,
+      0,
+      0
+    );
+    const secondsUntilMidnight = (midnight.getTime() - now.getTime()) / 1000;
+
+    if (secondsUntilMidnight > 3 && secondsUntilMidnight <= 30) {
+      birthdayCountdownOverlay.classList.remove("visible");
+      const secondsLeft = Math.floor(secondsUntilMidnight);
+      displayOrUpdateCountdownMessage(
+        `🎂 Herkes hazır mı? Kutlamaya son ${secondsLeft} saniye!`
+      );
+    } else if (secondsUntilMidnight > 0 && secondsUntilMidnight <= 3) {
+      const systemMsg = document.getElementById("birthday-countdown-message");
+      if (systemMsg) {
+        systemMsg.remove();
+      }
+
+      if (!birthdayCountdownOverlay.classList.contains("visible")) {
+        birthdayCountdownOverlay.classList.add("visible");
+      }
+
+      const currentSecond = Math.ceil(secondsUntilMidnight);
+      if (countdownNumberEl.textContent !== currentSecond.toString()) {
+        countdownNumberEl.textContent = currentSecond;
+        countdownNumberEl.style.animation = "none";
+        void countdownNumberEl.offsetWidth;
+        countdownNumberEl.style.animation = "scale-in 0.8s ease-out forwards";
+      }
+    } else if (
+      now.getHours() === 0 &&
+      now.getMinutes() === 0 &&
+      now.getSeconds() <= 2
+    ) {
+      celebrationTriggered = true;
+      birthdayCountdownOverlay.classList.remove("visible");
+      startConfetti();
+      displaySystemNotification(
+        "✨ Bugün Sizin Gününüz, Doğum Gününüz Kutlu Olsun! ✨"
+      );
+    } else if (now.getTime() > midnight.getTime() - 86400000) {
+      celebrationTriggered = true;
+      birthdayCountdownOverlay.classList.remove("visible");
+
+      const isMyBirthday = isUsersBirthdayToday(userBirthdate, roomDate);
+
+      if (isMyBirthday) {
+        displaySystemNotification(
+          `Doğum Günün Kutlu Olsun ${
+            myName.split("#")[0]
+          }! Geri sayıma yetişemedin ama üzülme, bir sonraki doğum gününde 00:00'dan önce sohbete katılıp diğer doğum günü arkadaşlarınla Geri Sayımla doğum gününe başlayabilirsin! Nice Senelere 🤍`
+        );
+      } else {
+        const roomDateString = `${roomDate
+          .getDate()
+          .toString()
+          .padStart(2, "0")}/${(roomDate.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}`;
+
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add(
+          "message",
+          "message-system",
+          "message-visitor-celebration"
+        );
+
+        const messageText = document.createElement("span");
+        messageText.textContent = `Vakit Geldi! ${roomDateString} arkadaşlarının şimdi doğum günü ve kutlamaları başladı, istersen sen de onların doğum günlerini kutlayabilirsin!`;
+
+        const celebrationButton = document.createElement("button");
+        celebrationButton.textContent = "Kutla!";
+        celebrationButton.className = "celebration-button";
+        celebrationButton.onclick = () => {
+          const payload = {
+            sender: myName,
+            content: `Doğum gününüz kutlu olsun ${roomDateString}'li arkadaşlarım! 🎉`,
+            timestamp: new Date().toISOString(),
+            id: "msg-" + Date.now(),
+          };
+          sendMessageToServer({
+            cmd: "gmsg",
+            val: JSON.stringify(payload),
+          });
+          displayMessage(payload, true, false);
+          celebrationButton.disabled = true;
+          celebrationButton.textContent = "Gönderildi!";
+        };
+
+        messageDiv.appendChild(messageText);
+        messageDiv.appendChild(celebrationButton);
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }
+  }, 1000);
+}
+
+function displayOrUpdateCountdownMessage(message) {
+  const existingMessage = document.getElementById("birthday-countdown-message");
+  const lastMessage = messagesContainer.lastElementChild;
+  if (existingMessage && lastMessage === existingMessage) {
+    existingMessage.querySelector(".message-content").textContent = message;
+  } else {
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add("message", "message-system");
+    messageDiv.id = "birthday-countdown-message";
+
+    const contentP = document.createElement("p");
+    contentP.classList.add("message-content");
+    contentP.textContent = message;
+    messageDiv.appendChild(contentP);
+
+    messagesContainer.appendChild(messageDiv);
+  }
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
