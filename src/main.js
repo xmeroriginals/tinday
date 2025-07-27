@@ -1,5 +1,5 @@
 const CL_SERVER_IP = "wss://cl.mikedev101.cc/";
-const OFFICIAL_BADGE_SVG = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0,0,465.20362,447.89812"><g transform="translate(-7.39819,43.94906)"><g stroke="none" stroke-miterlimit="10"><path d="M94.68849,180c0,-80.25333 65.05818,-145.31151 145.31151,-145.31151c80.25333,0 145.31151,65.05818 145.31151,145.31151c0,80.25333 -65.05818,145.31151 -145.31151,145.31151c-80.25333,0 -145.31151,-65.05818 -145.31151,-145.31151z" fill="#ffffff" stroke-width="0.5"/><path d="M472.60181,179.87075c-1.42407,17.55884 -7.62996,34.39231 -17.94421,48.67367c-3.75179,5.79794 -6.90806,11.96019 -9.42071,18.39281c-1.95158,6.94677 -3.08082,14.09864 -3.36454,21.30875c-0.27238,17.15747 -5.23697,33.91293 -14.35537,48.44936c-11.12537,13.19007 -25.62227,23.11308 -41.94459,28.71073c-6.66115,2.57079 -13.04823,5.8019 -19.06572,9.64501c-5.37594,4.4727 -10.33127,9.42803 -14.80397,14.80397c-10.23564,14.05759 -24.22988,24.942 -40.37447,31.40237c-16.57589,3.96782 -33.90407,3.50367 -50.24379,-1.34582c-14.28515,-3.57073 -29.22956,-3.57073 -43.51471,0c-9.85595,2.36192 -19.92668,3.7147 -30.05655,4.03745c-6.61272,-0.00785 -13.18816,-0.99039 -19.51433,-2.91593c-16.14459,-6.46037 -30.13883,-17.34478 -40.37447,-31.40237c-4.4727,-5.37594 -9.42803,-10.33127 -14.80397,-14.80397c-6.0175,-3.84312 -12.40458,-7.07423 -19.06572,-9.64501c-16.32232,-5.59766 -30.81922,-15.52066 -41.94459,-28.71073c-9.1184,-14.53643 -14.08298,-31.29189 -14.35537,-48.44936c-0.28372,-7.21011 -1.41296,-14.36198 -3.36454,-21.30875c-2.42134,-6.47332 -5.58254,-12.64519 -9.42071,-18.39281c-10.0366,-14.28865 -16.00598,-31.03392 -17.2713,-48.44936c1.18513,-17.57041 7.15814,-34.48103 17.2713,-48.89797c3.75179,-5.79794 6.90806,-11.96019 9.42071,-18.39281c2.1673,-6.76892 3.52262,-13.77139 4.03745,-20.86014c0.09249,-17.09039 4.82138,-33.83529 13.68246,-48.44936c11.18697,-13.22347 25.76532,-23.14915 42.16889,-28.71073c6.66115,-2.57079 13.04823,-5.8019 19.06572,-9.64501c5.37594,-4.4727 10.33127,-9.42803 14.80397,-14.80397c10.42666,-14.05617 24.56268,-24.93004 40.82308,-31.40237c16.58334,-4.01459 33.94347,-3.47209 50.24379,1.57012c14.30998,3.36293 29.20473,3.36293 43.51471,0c16.02034,-4.87948 33.04845,-5.42128 49.34658,-1.57012c16.0966,6.54375 30.06983,17.41181 40.37447,31.40237c4.3306,5.35596 9.13516,10.31066 14.35537,14.80397c6.0175,3.84312 12.40458,7.07423 19.06572,9.64501c16.32232,5.59766 30.81922,15.52066 41.94459,28.71073c9.09748,14.54587 14.06029,31.29538 14.35537,48.44936c0.51483,7.08875 1.87014,14.09122 4.03745,20.86014c2.48486,6.58733 5.64177,12.90113 9.42071,18.84142c10.0366,14.28865 16.00598,31.03392 17.2713,48.44936zM345.64653,119.08474c-8.7954,-8.7954 -23.05557,-8.7954 -31.85097,0l-96.22582,96.45012l-51.3653,-51.5896c-8.7954,-8.7954 -23.05557,-8.7954 -31.85097,0c-8.7954,8.7954 -8.7954,23.05557 0,31.85097l67.29078,67.29078c4.21165,4.24633 9.94474,6.63483 15.92549,6.63483c5.98075,0 11.71383,-2.3885 15.92549,-6.63483l112.15131,-112.15131c8.7954,-8.7954 8.7954,-23.05557 0,-31.85097z" fill="#00b5ff" stroke-width="1"/></g></g></svg>`;
+const OFFICIAL_BADGE_SVG = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0,0,465.20362,447.89812"><g transform="translate(-7.39819,43.94906)"><g stroke="none" stroke-miterlimit="10"><path d="M94.68849,180c0,-80.25333 65.05818,-145.31151 145.31151,-145.31151c80.25333,0 145.31151,65.05818 145.31151,145.31151c0,80.25333 -65.05818,145.31151 -145.31151,145.31151c-80.25333,0 -145.31151,-65.05818 -145.31151,-145.31151z" fill="#ffffff" stroke-width="0.5"/><path d="M472.60181,179.87075c-1.42407,17.55884 -7.62996,34.39231 -17.94421,48.67367c-3.75179,5.79794 -6.90806,11.96019 -9.42071,18.39281c-1.95158,6.94677 -3.08082,14.09864 -3.36454,21.30875c-0.27238,17.15747 -5.23697,33.91293 -14.35537,48.44936c-11.12537,13.19007 -25.62227,23.11308 -41.94459,28.71073c-6.66115,2.57079 -13.04823,5.8019 -19.06572,9.64501c-5.37594,4.4727 -10.33127,9.42803 -14.80397,14.80397c-10.23564,14.05759 -24.22988,24.942 -40.37447,31.40237c-16.57589,3.96782 -33.90407,3.50367 -50.24379,-1.34582c-14.28515,-3.57073 -29.22956,-3.57073 -43.51471,0c-9.85595,2.36192 -19.92668,3.7147 -30.05655,4.03745c-6.61272,-0.00785 -13.18816,-0.99039 -19.51433,-2.91593c-16.14459,-6.46037 -30.13883,-17.34478 -40.37447,-31.40237c-4.4727,-5.37594 -9.42803,-10.33127 -14.80397,-14.80397c-6.0175,-3.84312 -12.40458,-7.07423 -19.06572,-9.64501c-16.32232,-5.59766 -30.81922,-15.52066 -41.94459,-28.71073c-9.1184,-14.53643 -14.08298,-31.29189 -14.35537,-48.44936c-0.28372,-7.21011 -1.41296,-14.36198 -3.36454,-21.30875c-2.42134,-6.47332 -5.58254,-12.64519 -9.42071,-18.39281c-10.0366,-14.28865 -16.00598,-31.03392 -17.2713,-48.44936c1.18513,-17.57041 7.15814,-34.48103 17.2713,-48.89797c3.75179,-5.79794 6.90806,-11.96019 9.42071,-18.39281c2.1673,-6.76892 3.52262,-13.77139 4.03745,-20.86014c0.09249,-17.09039 4.82138,-33.83529 13.68246,-48.44936c11.18697,-13.22347 25.76532,-23.14915 42.16889,-28.71073c6.66115,-2.57079 13.04823,-5.8019 19.06572,-9.64501c5.37594,-4.4727 10.33127,-9.42803 14.80397,-14.80397c10.42666,-14.05617 24.56268,-24.93004 40.82308,-31.40237c16.58334,-4.01459 33.94347,-3.47209 50.24379,1.57012c14.30998,3.36293 29.20473,3.36293 43.51471,0c16.02034,-4.87948 33.04845,-5.42128 49.34658,-1.57012c16.0966,6.54375 30.06983,17.41181 40.37447,31.40237c4.3306,5.35596 9.13516,10.31066 14.35537,14.80397c6.0175,3.84312 12.40458,7.07423 19.06572,9.64501c16.32232,5.59766 30.81922,15.52066 41.94459,28.71073c9.09748,14.54587 14.06029,31.29538 14.35537,48.44936c0.51483,7.08875 1.87014,14.09122 4.03745,20.86014c2.48486,6.58733 5.64177,12.90113 9.42071,18.84142c10.0366,14.28865 16.00598,31.03392 17.2713,48.44936zM345.64653,119.08474c-8.7954,-8.7954 -23.05557,-8.7954 -31.85097,0l-96.22582,96.45012l-51.3653,-51.5896c-8.7954,-8.7954 -23.05557,-8.7954 -31.85097,0c-8.7954,8.7954 -8.7954,23.05557 0,31.85097l67.29078,67.29078c4.21165,4.24633 9.94474,6.63483 15.92549,6.63483c5.98075,0 11.71383,-2.3885 15.92549,-6.63483l112.15131,-112.15131c8.7954,-8.7954 8.7954,-23.05557 0,-31.85097z" fill="#fc918c" stroke-width="1"/></g></g></svg>`;
 const LOCAL_STORAGE_KEY = "tinday_user_data";
 const CALLS_DISABLED_KEY = "tinday_calls_disabled";
 const INSTA_PROFILE_URL = "https://instagram.com/tindayofficial";
@@ -134,9 +134,15 @@ const INBOX_FEATURE_ENABLED_KEY = "tinday_inbox_feature_enabled";
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 const CHUNK_SIZE = 64 * 1024;
 const p2pSpamTracker = new Map();
-const P2P_SPAM_THRESHOLD = 30;
+const P2P_SPAM_THRESHOLD = 300;
 const P2P_SPAM_WINDOW_MS = 10000;
 const P2P_COOLDOWN_DURATION_MS = 1 * 60 * 1000;
+
+const birthdaySound = document.getElementById("birthday-sound");
+const birthdayShortSound = document.getElementById("birthday-short-sound");
+const BIRTHDAY_WISH_KEY_PREFIX = "tinday_birthday_wishes_";
+let isBirthdayToday = false;
+let birthdayCelebrationTimeout;
 
 const callSFX = [outgoingCallSound, incomingCallSound, callEndSound];
 
@@ -420,8 +426,12 @@ async function handleFileSelected(file) {
     fileDataUrl = await fileToBase64(file);
   }
 
+  const safeFileName = file.name
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .substring(0, 100);
+
   const filePayload = {
-    name: file.name,
+    name: safeFileName,
     type: file.type,
     data_base64: fileDataUrl,
   };
@@ -501,9 +511,6 @@ const handleConnect = (event) => {
       "Sohbetten bağlantı sorunu oluştu, sayfayı yenileyiniz.",
       "error"
     );
-    setTimeout(() => {
-      location.reload();
-    }, 7000);
   };
   socket.onerror = (error) => {
     displaySystemNotification(
@@ -557,7 +564,10 @@ const handleStatusCode = async (packet) => {
       );
       isSwitchingRooms = false;
     } else {
-      location.reload();
+      displaySystemNotification(
+        "Bir sorun oluştu, lütfen sayfayı yenileyiniz.",
+        "error"
+      );
     }
   }
 };
@@ -632,6 +642,20 @@ const handleIncomingMessage = (packet) => {
 const handleGlobalMessage = (packet) => {
   try {
     const messageData = JSON.parse(packet.val);
+
+    if (messageData.type === "birthday_wish") {
+      const today = new Date().toISOString().split("T")[0];
+      const key = BIRTHDAY_WISH_KEY_PREFIX + today;
+      let wishers = JSON.parse(localStorage.getItem(key) || "[]");
+
+      if (wishers.includes(messageData.sender)) {
+        return;
+      }
+
+      wishers.push(messageData.sender);
+      localStorage.setItem(key, JSON.stringify(wishers));
+    }
+
     if (messageData.sender !== myName) {
       displayMessage(messageData, false, false);
     }
@@ -928,7 +952,7 @@ const handleSendMessage = async (event) => {
     return;
   }
 
-  const callToggleRegexLegacy = /^t\.(p2p|p2)$/i;
+  const callToggleRegexLegacy = /^t\.(peer2peer|p2p)$/i;
   if (callToggleRegexLegacy.test(messageText)) {
     if (!peer || peer.destroyed) {
       enableP2P();
@@ -947,7 +971,7 @@ const handleSendMessage = async (event) => {
     displayLocalAiMessage("Yapay zeka düşünüyor...", "Yapay Zeka");
     try {
       const response = await fetch(
-        `https://text.pollinations.ai/prompt/[Name&20Info${usrName},%20Your%20Name%20TindayAI],%20${encodeURIComponent(
+        `https://text.pollinations.ai/prompt/Inform[Name&20${usrName},%20Your%20Name%20TindayAI,%20Speak%20Turkish,%20Detail[You%20have%20no%20past%20memory,%20produce%20output%20knowing%20this.]]%20-%20${encodeURIComponent(
           prompt
         )}`
       );
@@ -955,7 +979,7 @@ const handleSendMessage = async (event) => {
       const aiResponse = await response.text();
       displayLocalAiMessage(aiResponse, "Yapay Zeka");
     } catch (error) {
-      console.error("AI fetch error:", error);
+      console.error("AI Error");
       displayLocalAiMessage(`Bir hata oluştu: ${error.message}`, "Yapay Zeka");
     }
     return;
@@ -1098,7 +1122,7 @@ async function processMessageContent(content) {
     const mergeUrl = `https://emojik.vercel.app/s/${emojiChars[0]}_${emojiChars[1]}?size=128`;
     const hasSurroundingText = processedText.trim() !== match.trim();
     if (hasSurroundingText) {
-      return `<img src="${mergeUrl}" alt="emoji merge" class="inline-emoji-merge">`;
+      return `<img src="${mergeUrl}" alt="Birleşmiş Emoji" class="inline-emoji-merge">`;
     } else {
       imageUrls.push(mergeUrl);
       return "";
@@ -1231,10 +1255,39 @@ const displayMessage = async (
       return;
     }
 
-    if (ALLOWED_MIME_PATTERNS.image.test(type)) {
+    if (type === "image/svg+xml") {
+      try {
+        const dirtySvgText = decodeURIComponent(
+          atob(data_base64.split(",")[1] || "")
+        );
+
+        const cleanSvgText = DOMPurify.sanitize(dirtySvgText, {
+          USE_PROFILES: { svg: true },
+        });
+
+        const safeDataUrl =
+          "data:image/svg+xml;base64," +
+          btoa(unescape(encodeURIComponent(cleanSvgText)));
+
+        const imgContainer = document.createElement("div");
+        imgContainer.className = "message-image-container";
+        imgContainer.innerHTML = `<img src="${safeDataUrl}" class="message-image" alt="${DOMPurify.sanitize(
+          name
+        )}" loading="lazy"/>`;
+        messageDiv.appendChild(imgContainer);
+      } catch (e) {
+        console.error("Gelen SVG işlenirken hata oluştu:", e);
+        displaySystemNotification(
+          "Bozuk veya geçersiz bir SVG dosyası alındı ve engellendi.",
+          "error"
+        );
+      }
+    } else if (ALLOWED_MIME_PATTERNS.image.test(type)) {
       const imgContainer = document.createElement("div");
       imgContainer.className = "message-image-container";
-      imgContainer.innerHTML = `<img src="${data_base64}" class="message-image" alt="${name}" loading="lazy"/>`;
+      imgContainer.innerHTML = `<img src="${data_base64}" class="message-image" alt="${DOMPurify.sanitize(
+        name
+      )}" loading="lazy"/>`;
       messageDiv.appendChild(imgContainer);
     } else if (ALLOWED_MIME_PATTERNS.audio.test(type)) {
       messageDiv.appendChild(createCustomAudioPlayer(data_base64));
@@ -1304,7 +1357,7 @@ function displayHelpMessage() {
   const commands = [
     { cmd: "t.help", desc: "Yardım menüsünü gösterir." },
     { cmd: "t.clear", alias: "t.clr", desc: "Sohbet ekranını temizler." },
-    { cmd: "t.p2p", alias: "t.p2", desc: "P2P'ı Açar veya Kapatır." },
+    { cmd: "t.peer2peer", alias: "t.p2p", desc: "P2P'ı Açar veya Kapatır." },
     { cmd: "t.call", alias: " - ", desc: "Aramaları Açar veya Kapatır." },
     {
       cmd: "t.inbox",
@@ -1344,6 +1397,54 @@ function displayHelpMessage() {
     } | ${desc}`;
     messageDiv.appendChild(p);
   });
+
+  messagesContainer.appendChild(messageDiv);
+  totalMessageCount++;
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+async function displaySpecialSystemMessage(
+  messageContent,
+  messageSystemSenderName,
+  messageSystemInfo
+) {
+  const { text: processedText, images } = await processMessageContent(
+    messageContent
+  );
+  if (!processedText && images.length === 0) return;
+
+  const messageDiv = document.createElement("div");
+  messageDiv.classList.add(
+    "message",
+    "message-received",
+    "message-system-special"
+  );
+
+  const header = document.createElement("strong");
+  header.classList.add("message-header");
+  header.innerHTML = `${messageSystemSenderName} | <span class="subtle-note">${messageSystemInfo}</span>`;
+  messageDiv.appendChild(header);
+
+  for (const imageUrl of images) {
+    const imgContainer = document.createElement("div");
+    imgContainer.className = "message-image-container";
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    img.alt = "Oluşturulan Resim";
+    img.className = "message-image";
+    img.loading = "lazy";
+    imageObserver.observe(img);
+    imgContainer.appendChild(img);
+    messageDiv.appendChild(imgContainer);
+  }
+
+  if (processedText) {
+    const p = document.createElement("p");
+    p.classList.add("message-content");
+    p.style.margin = "4px 0";
+    p.innerHTML = processedText;
+    messageDiv.appendChild(p);
+  }
 
   messagesContainer.appendChild(messageDiv);
   totalMessageCount++;
@@ -1500,9 +1601,46 @@ function showDownloadConfirmation(fileData) {
   };
 
   const triggerDownload = () => {
+    const originalName = fileData.name || "file";
+    const lastDot = originalName.lastIndexOf(".");
+    const extension =
+      lastDot > 0 ? originalName.substring(lastDot + 1).toLowerCase() : "dat";
+    const allowedExtensions = [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "bmp",
+      "mp3",
+      "wav",
+      "ogg",
+      "m4a",
+      "mp4",
+      "webm",
+      "mov",
+      "avi",
+      "mkv",
+      "pdf",
+      "txt",
+      "zip",
+      "rar",
+      "doc",
+      "docx",
+      "xls",
+      "xlsx",
+      "ppt",
+      "pptx",
+    ];
+
+    const safeExtension = allowedExtensions.includes(extension)
+      ? extension
+      : "dat";
+    const newSafeFileName = `tinday-download-${Date.now()}.${safeExtension}`;
+
     const link = document.createElement("a");
     link.href = fileData.data_base64;
-    link.download = fileData.name;
+    link.download = newSafeFileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1582,6 +1720,10 @@ function toggleTheme() {
 
 function showMenuAt(x, y) {
   const menu = document.getElementById("context-menu");
+  const sendGiftButton = document.getElementById("sendGiftUser");
+  if (sendGiftButton) {
+    sendGiftButton.style.display = isBirthdayToday ? "visible" : "none";
+  }
   const offset = 10;
   menu.style.left = `${x + offset}px`;
   menu.style.top = `${y - offset}px`;
@@ -1674,7 +1816,7 @@ function stopCallTimer() {
 
 async function handleIncomingData(data, senderPeerId) {
   if (data.type?.startsWith("file-transfer-") && !areInboxEnabled) {
-    console.log(`Gelen dosya transferi yoksayıldı (Gelen Kutusu kapalı).`);
+    console.log(`Gelen Kutusu isteği reddedildi. (Inbox Kapalı)`);
     return;
   }
 
@@ -1731,7 +1873,7 @@ async function handleIncomingData(data, senderPeerId) {
       data.type === "text-message-request") &&
     !areInboxEnabled
   ) {
-    console.log(`Gelen istek yoksayıldı (Gelen Kutusu kapalı).`);
+    console.log(`Gelen Kutusu isteği reddedildi. (Inbox Kapalı)`);
     return;
   }
 
@@ -1760,7 +1902,7 @@ async function handleIncomingData(data, senderPeerId) {
         data.fileInfo.totalChunks <= 0 ||
         data.fileInfo.totalChunks > MAX_CHUNKS
       ) {
-        console.warn("Invalid file transfer start packet received.");
+        console.warn("Invalid File.");
         return;
       }
       incomingFileTransfers.set(data.transferId, {
@@ -1869,7 +2011,7 @@ function initializePeerEvents(p) {
   p.on("call", (incomingCall) => {
     if (!areCallsEnabled) {
       incomingCall.close();
-      console.log("Gelen arama reddedildi (Aramalar kapalı).");
+      console.log("Gelen Arama reddedildi. (Aramalar Kapalı)");
       return;
     }
 
@@ -1964,7 +2106,7 @@ async function hangupLogic(sendHangupSignal = true) {
     try {
       dataConnection.send({ type: "hangup" });
     } catch (e) {
-      console.error("Arama sinyali gönderilirken hata oluştu.");
+      console.error("Error");
     }
   }
 
@@ -2086,7 +2228,7 @@ function initializePeerConnection() {
     peer.destroy();
   }
   if (!myPeerId) {
-    console.error("PeerJS Error: myPeerId is not set.");
+    console.error("PeerJS Error");
     return;
   }
   console.log("Peer Connecting...");
@@ -2772,187 +2914,237 @@ function createCustomVideoPlayer(data_base64) {
   return container;
 }
 
-function parseRoomDate(roomName) {
-  const match = roomName.match(/(\d{2})(\d{2})$/);
-  if (match) {
-    const month = parseInt(match[1], 10) - 1;
-    const day = parseInt(match[2], 10);
-    const today = new Date();
+document.getElementById("sendGiftUser").addEventListener("click", () => {
+  if (targetUserIdForCall) {
+    const targetUsername = targetUserIdForCall.split("#")[0];
 
-    return new Date(today.getFullYear(), month, day);
-  }
-  return null;
-}
+    const payload = {
+      sender: myName,
+      content: `Doğum günün kutlu olsun ${targetUsername}! 🎁`,
+      timestamp: new Date().toISOString(),
+      id: "msg-" + Date.now(),
+      type: "birthday_wish",
+    };
 
-function isUsersBirthdayToday(birthdateString, roomDate) {
-  try {
-    const userBday = new Date(birthdateString + "T00:00:00");
-    return (
-      userBday.getUTCMonth() === roomDate.getMonth() &&
-      userBday.getUTCDate() === roomDate.getDate()
-    );
-  } catch (e) {
-    return false;
+    sendMessageToServer({ cmd: "gmsg", val: JSON.stringify(payload) });
+    displayMessage(payload, true, false);
   }
-}
+
+  document.getElementById("context-menu").style.display = "none";
+  targetUserIdForCall = null;
+});
 
 async function initializeBirthdayCelebration(userBirthdate, roomName) {
-  const roomDate = parseRoomDate(roomName);
-  if (!roomDate) return;
+  cleanOldBirthdayCelebrations();
 
-  let authoritativeTime;
-  try {
-    const response = await fetch(
-      "https://worldtimeapi.org/api/timezone/Turkey"
-    );
-    if (!response.ok) throw new Error("API request failed");
-    const data = await response.json();
-    authoritativeTime = new Date(data.datetime);
-  } catch (error) {
-    console.warn(
-      "Authoritative time could not be fetched, falling back to local time.",
-      error
-    );
-    authoritativeTime = new Date();
+  if (birthdayCelebrationTimeout) clearTimeout(birthdayCelebrationTimeout);
+  isBirthdayToday = false;
+  let now_utc = new Date();
+  const birthDateObj = new Date(userBirthdate);
+  const birthMonth = birthDateObj.getUTCMonth();
+  const birthDay = birthDateObj.getUTCDate();
+  const yesterday_utc = new Date(now_utc.getTime() - 24 * 60 * 60 * 1000);
+  const wasBirthdayYesterday =
+    yesterday_utc.getUTCMonth() === birthMonth &&
+    yesterday_utc.getUTCDate() === birthDay;
+  const birthdayStartThisYear_utc = new Date(
+    Date.UTC(now_utc.getUTCFullYear(), birthMonth, birthDay)
+  );
+  const birthdayEndThisYear_utc = new Date(
+    birthdayStartThisYear_utc.getTime() + 24 * 60 * 60 * 1000
+  );
+  isBirthdayToday =
+    now_utc >= birthdayStartThisYear_utc && now_utc < birthdayEndThisYear_utc;
+
+  if (wasBirthdayYesterday) {
+    triggerOneDayLateCelebration(roomName);
+  } else if (isBirthdayToday) {
+    triggerSameDayCelebration(roomName);
   }
 
-  const clientTimeOnResponse = Date.now();
-  let celebrationTriggered = false;
-
-  const timerInterval = setInterval(() => {
-    if (celebrationTriggered) {
-      clearInterval(timerInterval);
-      return;
-    }
-
-    const elapsed = Date.now() - clientTimeOnResponse;
-    const now = new Date(authoritativeTime.getTime() + elapsed);
-
-    if (
-      now.getMonth() !== roomDate.getMonth() ||
-      now.getDate() !== roomDate.getDate()
-    ) {
-      return;
-    }
-
-    const midnight = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() + 1,
-      0,
-      0,
-      0
+  let targetBirthdayStart_utc;
+  if (now_utc < birthdayStartThisYear_utc) {
+    targetBirthdayStart_utc = birthdayStartThisYear_utc;
+  } else {
+    const nextYear = now_utc.getUTCFullYear() + 1;
+    targetBirthdayStart_utc = new Date(
+      Date.UTC(nextYear, birthMonth, birthDay)
     );
-    const secondsUntilMidnight = (midnight.getTime() - now.getTime()) / 1000;
+  }
+  const timeUntilTarget = targetBirthdayStart_utc.getTime() - now_utc.getTime();
 
-    if (secondsUntilMidnight > 3 && secondsUntilMidnight <= 30) {
-      birthdayCountdownOverlay.classList.remove("visible");
-      const secondsLeft = Math.floor(secondsUntilMidnight);
-      displayOrUpdateCountdownMessage(
-        `🎂 Herkes hazır mı? Kutlamaya son ${secondsLeft} saniye!`
-      );
-    } else if (secondsUntilMidnight > 0 && secondsUntilMidnight <= 3) {
-      const systemMsg = document.getElementById("birthday-countdown-message");
-      if (systemMsg) {
-        systemMsg.remove();
-      }
-
-      if (!birthdayCountdownOverlay.classList.contains("visible")) {
-        birthdayCountdownOverlay.classList.add("visible");
-      }
-
-      const currentSecond = Math.ceil(secondsUntilMidnight);
-      if (countdownNumberEl.textContent !== currentSecond.toString()) {
-        countdownNumberEl.textContent = currentSecond;
-        countdownNumberEl.style.animation = "none";
-        void countdownNumberEl.offsetWidth;
-        countdownNumberEl.style.animation = "scale-in 0.8s ease-out forwards";
-      }
-    } else if (
-      now.getHours() === 0 &&
-      now.getMinutes() === 0 &&
-      now.getSeconds() <= 2
-    ) {
-      celebrationTriggered = true;
-      birthdayCountdownOverlay.classList.remove("visible");
-      startConfetti();
-      displaySystemNotification(
-        "✨ Bugün Sizin Gününüz, Doğum Gününüz Kutlu Olsun! ✨"
-      );
-    } else if (now.getTime() > midnight.getTime() - 86400000) {
-      celebrationTriggered = true;
-      birthdayCountdownOverlay.classList.remove("visible");
-
-      const isMyBirthday = isUsersBirthdayToday(userBirthdate, roomDate);
-
-      if (isMyBirthday) {
-        displaySystemNotification(
-          `Doğum Günün Kutlu Olsun ${
-            myName.split("#")[0]
-          }! Geri sayıma yetişemedin ama üzülme, bir sonraki doğum gününde 00:00'dan önce sohbete katılıp diğer doğum günü arkadaşlarınla Geri Sayımla doğum gününe başlayabilirsin! Nice Senelere 🤍`
-        );
-      } else {
-        const roomDateString = `${roomDate
-          .getDate()
-          .toString()
-          .padStart(2, "0")}/${(roomDate.getMonth() + 1)
-          .toString()
-          .padStart(2, "0")}`;
-
-        const messageDiv = document.createElement("div");
-        messageDiv.classList.add(
-          "message",
-          "message-system",
-          "message-visitor-celebration"
-        );
-
-        const messageText = document.createElement("span");
-        messageText.textContent = `Vakit Geldi! ${roomDateString} arkadaşlarının şimdi doğum günü ve kutlamaları başladı, istersen sen de onların doğum günlerini kutlayabilirsin!`;
-
-        const celebrationButton = document.createElement("button");
-        celebrationButton.textContent = "Kutla!";
-        celebrationButton.className = "celebration-button";
-        celebrationButton.onclick = () => {
-          const payload = {
-            sender: myName,
-            content: `Doğum gününüz kutlu olsun ${roomDateString}'li arkadaşlarım! 🎉`,
-            timestamp: new Date().toISOString(),
-            id: "msg-" + Date.now(),
-          };
-          sendMessageToServer({
-            cmd: "gmsg",
-            val: JSON.stringify(payload),
-          });
-          displayMessage(payload, true, false);
-          celebrationButton.disabled = true;
-          celebrationButton.textContent = "Gönderildi!";
-        };
-
-        messageDiv.appendChild(messageText);
-        messageDiv.appendChild(celebrationButton);
-        messagesContainer.appendChild(messageDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }
-    }
-  }, 1000);
+  if (timeUntilTarget > 0 && timeUntilTarget <= 30000) {
+    birthdayCelebrationTimeout = setTimeout(
+      startBirthdayCountdown,
+      timeUntilTarget
+    );
+  } else if (timeUntilTarget > 30000) {
+    const timeUntilCountdown = timeUntilTarget - 30000;
+    birthdayCelebrationTimeout = setTimeout(
+      startBirthdayCountdown,
+      timeUntilCountdown
+    );
+  }
 }
 
-function displayOrUpdateCountdownMessage(message) {
-  const existingMessage = document.getElementById("birthday-countdown-message");
-  const lastMessage = messagesContainer.lastElementChild;
-  if (existingMessage && lastMessage === existingMessage) {
-    existingMessage.querySelector(".message-content").textContent = message;
-  } else {
-    const messageDiv = document.createElement("div");
-    messageDiv.classList.add("message", "message-system");
-    messageDiv.id = "birthday-countdown-message";
-
-    const contentP = document.createElement("p");
-    contentP.classList.add("message-content");
-    contentP.textContent = message;
-    messageDiv.appendChild(contentP);
-
-    messagesContainer.appendChild(messageDiv);
+function triggerSameDayCelebration(roomName) {
+  const celebratedKey = `celebrated_${roomName}_${new Date().getUTCFullYear()}`;
+  if (localStorage.getItem(celebratedKey)) {
+    return;
   }
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  const myUsername = myName.split("#")[0];
+
+  const nowLocal = new Date();
+  const midnightLocal = new Date(nowLocal);
+  midnightLocal.setHours(0, 0, 0, 0);
+  const missedTheCountdown =
+    nowLocal.getTime() > midnightLocal.getTime() + 5 * 60 * 1000;
+
+  let messageText = "";
+  if (missedTheCountdown) {
+    messageText = `Doğum günün kutlu olsun ${myUsername}, Nice senelere! ❤️🥳🎉 https://media.tenor.com/bh9MAiCpL6wAAAAi/birthday-cake.gif`;
+  } else {
+    messageText = `Geri sayımı kaçırdın ama olsun, Doğum günün kutlu olsun ${myUsername}, Nice senelere! ❤️🥳🎉 https://media.tenor.com/bh9MAiCpL6wAAAAi/birthday-cake.gif`;
+  }
+  let messageSystemSenderName = "TinDay Official Team";
+  let messageSystemInfo = "Bu mesaj size özel...";
+  displaySpecialSystemMessage(
+    messageText,
+    messageSystemSenderName,
+    messageSystemInfo
+  );
+  startConfetti();
+  birthdayShortSound.play().catch((e) => console.error("Birthday Sound Error"));
+  localStorage.setItem(celebratedKey, "true");
+}
+
+function triggerOneDayLateCelebration(roomName) {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const celebratedKey = `celebrated_${roomName}_${yesterday.getFullYear()}`;
+  if (localStorage.getItem(celebratedKey)) {
+    return;
+  }
+  const myUsername = myName.split("#")[0];
+
+  const messageText = `Geçmiş doğum günün kutlu olsun ${myUsername}! Umarız harika bir gün geçirmişsindir... 🥳🎉 https://media.tenor.com/bh9MAiCpL6wAAAAi/birthday-cake.gif`;
+
+  let messageSystemSenderName = "TinDay Official Team";
+  let messageSystemInfo = "Bu mesaj size özel...";
+  displaySpecialSystemMessage(
+    messageText,
+    messageSystemSenderName,
+    messageSystemInfo
+  );
+
+  startConfetti();
+  localStorage.setItem(celebratedKey, "true");
+}
+
+function startBirthdayCountdown() {
+  messageInput.disabled = true;
+  messageInput.placeholder = "Doğum günü kutlaması yaklaşıyor...";
+  setTimeout(() => {
+    birthdayCountdownOverlay.classList.add("visible");
+    let count = 5;
+    countdownNumberEl.textContent = count;
+
+    const interval = setInterval(() => {
+      count--;
+      if (count > 0) {
+        countdownNumberEl.textContent = count;
+      } else {
+        clearInterval(interval);
+        triggerBirthdayCelebration();
+      }
+    }, 1000);
+  }, 25000);
+}
+
+function triggerBirthdayCelebration() {
+  birthdayCountdownOverlay.classList.remove("visible");
+  messageInput.disabled = false;
+  messageInput.placeholder = "Mesajınızı yazın...";
+
+  isBirthdayToday = true;
+  startConfetti();
+  birthdaySound
+    .play()
+    .catch((e) => console.error("Birthday sound could not be played:", e));
+
+  const myUsername = myName.split("#")[0];
+  const celebrationMessage = {
+    sender: "Sistem",
+    content: `🎂 Doğum günün kutlu olsun ${myUsername}! Nice mutlu senelere! 🥳`,
+    timestamp: new Date().toISOString(),
+    id: "msg-birthday-" + Date.now(),
+  };
+  displayMessage(celebrationMessage, false, true);
+}
+
+function triggerPastBirthdayCelebration(roomName) {
+  const celebratedKey = `celebrated_${roomName}_${new Date().getUTCFullYear()}`;
+  const myUsername = myName.split("#")[0];
+  if (localStorage.getItem(celebratedKey)) {
+    return;
+  }
+
+  const nowLocal = new Date();
+  const midnightLocal = new Date(nowLocal);
+  midnightLocal.setHours(0, 0, 0, 0);
+  const missedTheCountdown =
+    nowLocal.getTime() > midnightLocal.getTime() + 5 * 60 * 1000;
+
+  let message = "";
+
+  if (missedTheCountdown) {
+    message = `Doğum günün kutlu olsun ${myUsername}! ❤️🥳🎉`;
+  } else {
+    message = `Geri sayımı kaçırdın ama olsun, Doğum günün kutlu olsun ${myUsername}! ❤️🥳🎉`;
+  }
+
+  let messageSystemSenderName = "TinDay Official Team";
+  let messageSystemInfo = "Bu mesaj size özel...";
+  displaySpecialSystemMessage(
+    message,
+    messageSystemSenderName,
+    messageSystemInfo
+  );
+
+  startConfetti();
+
+  localStorage.setItem(celebratedKey, "true");
+}
+
+function cleanOldBirthdayCelebrations() {
+  const currentYear = new Date().getUTCFullYear();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+
+    if (key.startsWith("celebrated_")) {
+      const parts = key.split("_");
+      if (parts.length === 3) {
+        const year = parseInt(parts[2], 10);
+        if (!isNaN(year) && year < currentYear) {
+          localStorage.removeItem(key);
+          i--;
+          continue;
+        }
+      }
+    }
+
+    if (key.startsWith(BIRTHDAY_WISH_KEY_PREFIX)) {
+      const dateString = key.replace(BIRTHDAY_WISH_KEY_PREFIX, "");
+      const keyDate = new Date(dateString);
+
+      if (!isNaN(keyDate.getTime()) && keyDate < today) {
+        localStorage.removeItem(key);
+        i--;
+      }
+    }
+  }
 }
