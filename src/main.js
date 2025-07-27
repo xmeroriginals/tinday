@@ -273,7 +273,7 @@ const FavoritesDB = {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open("FavoritesDB", 1);
       request.onerror = (event) => {
-        console.error("IndexedDB Error ", event.target.error);
+        console.error("IndexedDB Error");
         reject("Veritabanı Hatası");
       };
       request.onsuccess = (event) => {
@@ -296,7 +296,7 @@ const FavoritesDB = {
       request.onsuccess = () => resolve();
       request.onerror = (e) => {
         if (e.target.error.name !== "ConstraintError")
-          console.error("Favorites Error ", e.target.error);
+          console.error("Favorites Error");
         resolve();
       };
     });
@@ -308,7 +308,7 @@ const FavoritesDB = {
       const request = store.delete(url);
       request.onsuccess = () => resolve();
       request.onerror = (e) => {
-        console.error("Favorites Error ", e.target.error);
+        console.error("Favorites Error");
         reject();
       };
     });
@@ -339,7 +339,7 @@ function saveUserData(username, birthdate) {
     const encodedData = btoa(JSON.stringify({ username, birthdate }));
     localStorage.setItem(LOCAL_STORAGE_KEY, encodedData);
   } catch (e) {
-    console.error("Failed UD", e);
+    console.error("Failed UD");
   }
 }
 
@@ -349,7 +349,7 @@ function loadUserData() {
   try {
     return JSON.parse(atob(data));
   } catch (e) {
-    console.error("Failed UD", e);
+    console.error("Failed UD");
     localStorage.removeItem(LOCAL_STORAGE_KEY);
     return null;
   }
@@ -586,7 +586,6 @@ const handleIncomingMessage = (packet) => {
   try {
     messageData = JSON.parse(packet.val);
   } catch (e) {
-    console.warn("Received non-JSON GMSG", packet.val, e);
     return;
   }
   const senderId = messageData.sender;
@@ -1067,60 +1066,95 @@ function formatTime(seconds) {
 }
 
 async function processMessageContent(content) {
-  let processedText = DOMPurify.sanitize(content, {
-    USE_PROFILES: { html: false },
-  });
+  const MAX_IMAGES_PER_MESSAGE = 3;
+  const MAX_LINKS_PER_MESSAGE = 20;
+  let imageCount = 0;
+  let linkCount = 0;
+  let gifPreviewed = false;
+  let text = DOMPurify.sanitize(content, { USE_PROFILES: { html: false } });
+
   let imageUrls = [];
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-  processedText = processedText.replace(urlRegex, (url) => {
+  text = text.replace(urlRegex, (url) => {
     try {
       const urlObj = new URL(url);
       const hostname = urlObj.hostname.replace(/^www\./, "");
-      if (hostname === "giphy.com" && urlObj.pathname.startsWith("/gifs/")) {
-        const parts = urlObj.pathname.split("-");
-        const gifId = parts[parts.length - 1];
-        if (gifId) {
-          imageUrls.push(`https://i.giphy.com/media/${gifId}/giphy.webp`);
-          return "";
+
+      let isGifSource = false;
+      let finalImageUrl = url;
+      if (
+        !gifPreviewed &&
+        (hostname.includes("giphy.com") || hostname.includes("tenor.com"))
+      ) {
+        if (hostname === "giphy.com" && urlObj.pathname.startsWith("/gifs/")) {
+          const parts = urlObj.pathname.split("-");
+          const gifId = parts[parts.length - 1];
+          if (gifId) {
+            finalImageUrl = `https://i.giphy.com/media/${gifId}/giphy.webp`;
+            isGifSource = true;
+          }
+        } else if (hostname.includes("tenor.com")) {
+          let gifId = "";
+          const tenorViewMatch = urlObj.pathname.match(/-(\d+)$/);
+          const tenorCMatch = urlObj.pathname.match(
+            /\/([a-zA-Z0-9_-]+)\/tenor\.gif$/
+          );
+          if (tenorCMatch && tenorCMatch[1]) {
+            gifId = tenorCMatch[1];
+          } else if (tenorViewMatch && tenorViewMatch[1]) {
+            finalImageUrl = url + ".gif";
+            isGifSource = true;
+          }
+          if (gifId && !isGifSource) {
+            finalImageUrl = `https://c.tenor.com/${gifId}/tenor.gif`;
+            isGifSource = true;
+          }
         }
       }
-      if (hostname.includes("tenor.com")) {
-        let gifId = "";
-        const tenorViewMatch = urlObj.pathname.match(/-(\d+)$/);
-        const tenorCMatch = urlObj.pathname.match(
-          /\/([a-zA-Z0-9_-]+)\/tenor\.gif$/
-        );
-        if (tenorCMatch && tenorCMatch[1]) {
-          gifId = tenorCMatch[1];
-        } else if (tenorViewMatch && tenorViewMatch[1]) {
-          imageUrls.push(url + ".gif");
-          return "";
-        }
-        if (gifId) {
-          imageUrls.push(`https://c.tenor.com/${gifId}/tenor.gif`);
-          return "";
-        }
-      }
-      if (TRUSTED_IMAGE_DOMAINS.some((domain) => hostname.includes(domain))) {
-        imageUrls.push(url);
+
+      if (isGifSource && !gifPreviewed && imageCount < MAX_IMAGES_PER_MESSAGE) {
+        imageUrls.push(finalImageUrl);
+        imageCount++;
+        gifPreviewed = true;
         return "";
+      } else if (
+        TRUSTED_IMAGE_DOMAINS.some((domain) => hostname.includes(domain)) &&
+        imageCount < MAX_IMAGES_PER_MESSAGE
+      ) {
+        imageUrls.push(url);
+        imageCount++;
+        return "";
+      } else if (linkCount < MAX_LINKS_PER_MESSAGE) {
+        const safeUrl = DOMPurify.sanitize(url, {
+          USE_PROFILES: { html: false },
+        });
+        linkCount++;
+
+        if (TRUSTED_SOCIAL_DOMAINS[hostname]) {
+          const social = TRUSTED_SOCIAL_DOMAINS[hostname];
+          return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="social-link"><i class="${social.icon}"></i> ${social.name}</a>`;
+        }
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="social-link"><i class="fa-solid fa-link"></i> ${hostname}</a>`;
       }
-      if (TRUSTED_SOCIAL_DOMAINS[hostname]) {
-        const social = TRUSTED_SOCIAL_DOMAINS[hostname];
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="social-link"><i class="${social.icon}"></i> ${social.name}</a>`;
-      }
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="social-link"><i class="fa-solid fa-link"></i> ${hostname}</a>`;
+
+      return url;
     } catch (e) {
       return url;
     }
   });
+
   const cmdEmgRegex =
     /t\.(emg|emojimerge)\s+([\u00a9\u00ae\u2000-\u3300\ud83c\ud000-\udfff\ud83d\ud000-\udfff]+)/gi;
-  processedText = processedText.replace(cmdEmgRegex, (match, cmd, emojis) => {
+  text = text.replace(cmdEmgRegex, (match, cmd, emojis) => {
+    if (imageCount >= MAX_IMAGES_PER_MESSAGE) return match;
+
     const emojiChars = Array.from(emojis.trim());
     if (emojiChars.length < 2) return match;
+
     const mergeUrl = `https://emojik.vercel.app/s/${emojiChars[0]}_${emojiChars[1]}?size=128`;
-    const hasSurroundingText = processedText.trim() !== match.trim();
+    const hasSurroundingText = text.trim() !== match.trim();
+
+    imageCount++;
     if (hasSurroundingText) {
       return `<img src="${mergeUrl}" alt="Birleşmiş Emoji" class="inline-emoji-merge">`;
     } else {
@@ -1128,12 +1162,20 @@ async function processMessageContent(content) {
       return "";
     }
   });
+
   const igMacro = /\[IG\]/gi;
-  processedText = processedText.replace(
-    igMacro,
-    `<a href="${INSTA_PROFILE_URL}" target="_blank" rel="noopener noreferrer" class="social-link"><i class="fa-brands fa-instagram"></i> Instagram</a>`
-  );
-  return { text: processedText.trim(), images: imageUrls };
+  text = text.replace(igMacro, (match) => {
+    if (linkCount >= MAX_LINKS_PER_MESSAGE) return match;
+    linkCount++;
+    return `<a href="${INSTA_PROFILE_URL}" target="_blank" rel="noopener noreferrer" class="social-link"><i class="fa-brands fa-instagram"></i> Instagram</a>`;
+  });
+
+  const cleanHtml = DOMPurify.sanitize(text, {
+    ALLOWED_TAGS: ["a", "i", "img"],
+    ALLOWED_ATTR: ["href", "target", "rel", "class", "src", "alt"],
+  });
+
+  return { text: cleanHtml.trim(), images: imageUrls };
 }
 
 const displayMessage = async (
@@ -1276,7 +1318,6 @@ const displayMessage = async (
         )}" loading="lazy"/>`;
         messageDiv.appendChild(imgContainer);
       } catch (e) {
-        console.error("Gelen SVG işlenirken hata oluştu:", e);
         displaySystemNotification(
           "Bozuk veya geçersiz bir SVG dosyası alındı ve engellendi.",
           "error"
@@ -1462,7 +1503,6 @@ function parseNewsMessage(str) {
       timestamp: datetimeMatch[1],
     };
   }
-  console.warn("OBMSG JSON Error", str);
   return null;
 }
 
@@ -1492,7 +1532,7 @@ async function fetchAndDisplayNews() {
       }
     }
   } catch (error) {
-    console.error("Failed News ", error);
+    console.error("Failed News");
   }
 }
 
@@ -1750,7 +1790,7 @@ async function playSound(soundToPlay) {
       soundToPlay.volume = 1;
       await soundToPlay.play();
     } catch (e) {
-      console.error("Audio Error ", e);
+      console.error("Audio Error");
     }
   }
 }
@@ -1815,6 +1855,10 @@ function stopCallTimer() {
 }
 
 async function handleIncomingData(data, senderPeerId) {
+  if (!data || typeof data.type !== "string") {
+    return;
+  }
+
   if (data.type?.startsWith("file-transfer-") && !areInboxEnabled) {
     console.log(`Gelen Kutusu isteği reddedildi. (Inbox Kapalı)`);
     return;
@@ -1828,7 +1872,6 @@ async function handleIncomingData(data, senderPeerId) {
       throttleEndTime: 0,
     });
   }
-
   const userData = p2pSpamTracker.get(senderPeerId);
   if (userData.isThrottled && now > userData.throttleEndTime) {
     userData.isThrottled = false;
@@ -1841,21 +1884,17 @@ async function handleIncomingData(data, senderPeerId) {
       )} kullanıcısının P2P yavaşlatması kaldırıldı.`
     );
   }
-
   if (userData.isThrottled) {
     return;
   }
-
   userData.timestamps.push(now);
   userData.timestamps = userData.timestamps.filter(
     (ts) => now - ts < P2P_SPAM_WINDOW_MS
   );
-
   if (userData.timestamps.length > P2P_SPAM_THRESHOLD) {
     userData.isThrottled = true;
     userData.throttleEndTime = now + P2P_COOLDOWN_DURATION_MS;
     userData.timestamps = [];
-
     const displayName = senderPeerId.split("-")[0];
     displaySystemNotification(
       `${truncateText(
@@ -1864,29 +1903,19 @@ async function handleIncomingData(data, senderPeerId) {
       )} kullanıcısı P2P üzerinden spam yaptığı için 1 dakika boyunca engellendi.`,
       "error"
     );
-
-    return;
-  }
-
-  if (
-    (data.type?.startsWith("file-transfer-") ||
-      data.type === "text-message-request") &&
-    !areInboxEnabled
-  ) {
-    console.log(`Gelen Kutusu isteği reddedildi. (Inbox Kapalı)`);
     return;
   }
 
   switch (data.type) {
     case "text-message-request":
-      inboxRequests.set(data.transferId, data);
-      updateInboxUI(true);
-      if (inboxPanel.classList.contains("active")) {
-        renderInboxPanel();
+      if (
+        typeof data.transferId !== "string" ||
+        typeof data.senderId !== "string" ||
+        typeof data.content !== "string" ||
+        data.content.length > 4096
+      ) {
+        return;
       }
-      break;
-
-    case "file-transfer-request":
       inboxRequests.set(data.transferId, data);
       updateInboxUI(true);
       if (inboxPanel.classList.contains("active")) {
@@ -1895,14 +1924,15 @@ async function handleIncomingData(data, senderPeerId) {
       break;
 
     case "file-transfer-start":
-      const MAX_CHUNKS = Math.ceil(MAX_FILE_SIZE_BYTES / CHUNK_SIZE) + 1;
+      const MAX_CHUNKS = Math.ceil(MAX_FILE_SIZE_BYTES / CHUNK_SIZE) + 5;
       if (
+        !data.fileInfo ||
+        typeof data.fileInfo.size !== "number" ||
+        typeof data.fileInfo.totalChunks !== "number" ||
         data.fileInfo.size > MAX_FILE_SIZE_BYTES ||
-        !Number.isInteger(data.fileInfo.totalChunks) ||
         data.fileInfo.totalChunks <= 0 ||
         data.fileInfo.totalChunks > MAX_CHUNKS
       ) {
-        console.warn("Invalid File.");
         return;
       }
       incomingFileTransfers.set(data.transferId, {
@@ -1914,14 +1944,29 @@ async function handleIncomingData(data, senderPeerId) {
       break;
 
     case "file-chunk":
+      if (
+        typeof data.transferId !== "string" ||
+        typeof data.chunkIndex !== "number" ||
+        data.chunkIndex < 0 ||
+        typeof data.data !== "string"
+      ) {
+        return;
+      }
       const transfer = incomingFileTransfers.get(data.transferId);
-      if (transfer && !transfer.chunks[data.chunkIndex]) {
+      if (
+        transfer &&
+        data.chunkIndex < transfer.fileInfo.totalChunks &&
+        !transfer.chunks[data.chunkIndex]
+      ) {
         transfer.chunks[data.chunkIndex] = data.data;
         transfer.receivedChunks++;
       }
       break;
 
     case "file-transfer-end":
+      if (typeof data.transferId !== "string") {
+        return;
+      }
       const finishedTransfer = incomingFileTransfers.get(data.transferId);
       if (
         finishedTransfer &&
@@ -1940,7 +1985,6 @@ async function handleIncomingData(data, senderPeerId) {
             senderId: finishedTransfer.senderId,
             file: fullFilePayload,
           };
-
           inboxRequests.set(data.transferId, requestData);
           updateInboxUI(true);
           if (inboxPanel.classList.contains("active")) {
@@ -1970,6 +2014,9 @@ async function handleIncomingData(data, senderPeerId) {
         await playSound(callEndSound);
       }
       hangupLogic(false);
+      break;
+
+    default:
       break;
   }
 }
@@ -3068,9 +3115,7 @@ function triggerBirthdayCelebration() {
 
   isBirthdayToday = true;
   startConfetti();
-  birthdaySound
-    .play()
-    .catch((e) => console.error("Birthday sound could not be played:", e));
+  birthdaySound.play().catch((e) => console.error("Birthday Sound Error"));
 
   const myUsername = myName.split("#")[0];
   const celebrationMessage = {
