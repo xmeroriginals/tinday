@@ -682,7 +682,7 @@ const handleIncomingMessage = (packet) => {
 
 const handleGlobalMessage = (packet) => {
   try {
-    const messageData = JSON.parse(packet.val);
+    const messageData = sanitizeMessageObject(JSON.parse(packet.val));
 
     if (messageData.type === "birthday_wish") {
       const today = new Date().toISOString().split("T")[0];
@@ -1040,8 +1040,6 @@ const handleSendMessage = async (event) => {
       if (navigator.share) {
         navigator
           .share({
-            title: "TinDay Sohbet Odası Daveti",
-            text: `Seni ${customRoomNamePart} odasına davet ediyorum!`,
             url: shareUrl,
           })
           .catch((error) => console.log("Paylaşım sırasında hata:", error));
@@ -1276,6 +1274,13 @@ async function processMessageContent(content) {
     if (linkCount >= MAX_LINKS_PER_MESSAGE) return match;
     linkCount++;
     return `<a href="${INSTA_PROFILE_URL}" target="_blank" rel="noopener noreferrer" class="social-link"><i class="fa-brands fa-instagram"></i> Instagram</a>`;
+  });
+
+  const buymeacoffeeMacro = /\[BYMC\]/gi;
+  text = text.replace(buymeacoffeeMacro, (match) => {
+    if (linkCount >= MAX_LINKS_PER_MESSAGE) return match;
+    linkCount++;
+    return `<a href="https://buymeacoffee.com/xmer" target="_blank" rel="noopener noreferrer" class="social-link"><i class="fa-solid fa-mug-hot"></i> Buy me a Coffee</a>`;
   });
 
   const cleanHtml = DOMPurify.sanitize(text, {
@@ -2034,7 +2039,9 @@ async function handleIncomingData(data, senderPeerId) {
       ) {
         return;
       }
-      inboxRequests.set(data.transferId, data);
+
+      const sanitizedTextData = sanitizeMessageObject(data);
+      inboxRequests.set(sanitizedTextData.transferId, sanitizedTextData);
       updateInboxUI(true);
       if (inboxPanel.classList.contains("active")) {
         renderInboxPanel();
@@ -2053,11 +2060,13 @@ async function handleIncomingData(data, senderPeerId) {
       ) {
         return;
       }
-      incomingFileTransfers.set(data.transferId, {
-        fileInfo: data.fileInfo,
-        chunks: new Array(data.fileInfo.totalChunks),
+
+      const sanitizedFileData = sanitizeMessageObject(data);
+      incomingFileTransfers.set(sanitizedFileData.transferId, {
+        fileInfo: sanitizedFileData.fileInfo,
+        chunks: new Array(sanitizedFileData.fileInfo.totalChunks),
         receivedChunks: 0,
-        senderId: data.senderId,
+        senderId: sanitizedFileData.senderId,
       });
       break;
 
@@ -3323,4 +3332,31 @@ function cleanOldBirthdayCelebrations() {
       }
     }
   }
+}
+
+function sanitizeMessageObject(msg) {
+  const sanitize = (str) =>
+    str ? DOMPurify.sanitize(str, { USE_PROFILES: { html: false } }) : str;
+
+  if (msg.sender) msg.sender = sanitize(msg.sender);
+  if (msg.content) msg.content = sanitize(msg.content);
+
+  if (msg.senderId) msg.senderId = sanitize(msg.senderId);
+
+  if (msg.file && msg.file.name) {
+    msg.file.name = sanitize(msg.file.name);
+  }
+
+  if (msg.fileInfo && msg.fileInfo.name) {
+    msg.fileInfo.name = sanitize(msg.fileInfo.name);
+  }
+
+  if (msg.reply) {
+    if (msg.reply.originalSender)
+      msg.reply.originalSender = sanitize(msg.reply.originalSender);
+    if (msg.reply.originalContent)
+      msg.reply.originalContent = sanitize(msg.reply.originalContent);
+  }
+
+  return msg;
 }
