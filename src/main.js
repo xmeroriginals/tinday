@@ -557,20 +557,27 @@ const handleStatusCode = async (packet) => {
     } else if (packet.listener === "link") {
       welcomeScreen.style.display = "none";
       chatScreen.style.display = "flex";
+
       if (initialCustomRoomName) {
         window.history.pushState({}, document.title, window.location.pathname);
         initialCustomRoomName = null;
         displaySystemNotification(
-          'Arkadaşlarınızı davet etmek için "t.sro" yazınız.'
+          "Arkadaşlarınızı davet etmek için 't.sro' yazınız."
         );
       }
 
       await FavoritesDB.init();
       initializePeerConnection();
+
       const userData = loadUserData();
-      if (userData && userData.birthdate) {
+      const isBirthdayRoom =
+        roomName.startsWith("TwinDayBirthdayChat") &&
+        roomName !== "TwinDayBirthdayChatGLOBAL";
+
+      if (isBirthdayRoom && userData && userData.birthdate) {
         initializeBirthdayCelebration(userData.birthdate, roomName);
       }
+
       if (!newsPollingStarted) {
         setTimeout(() => {
           fetchAndDisplayNews();
@@ -584,15 +591,13 @@ const handleStatusCode = async (packet) => {
       );
       if (roomName.startsWith("TwinDayCustomRoom_")) {
         displaySystemNotification(
-          'Arkadaşlarınızı davet etmek için "t.sro" yazınız.'
+          "Arkadaşlarınızı davet etmek için 't.sro' yazınız."
         );
       }
       isSwitchingRooms = false;
     }
   } else {
-    const errorMsg = `Server Error: ${packet.code}. ${
-      packet.val || "Sunucu Hatası"
-    }`;
+    const errorMsg = `Error`;
     alert(errorMsg);
     if (isSwitchingRooms) {
       displaySystemNotification(
@@ -1036,7 +1041,7 @@ const handleSendMessage = async (event) => {
         navigator
           .share({
             title: "TinDay Sohbet Odası Daveti",
-            text: `Seni "${customRoomNamePart}" odasına davet ediyorum!`,
+            text: `Seni ${customRoomNamePart} odasına davet ediyorum!`,
             url: shareUrl,
           })
           .catch((error) => console.log("Paylaşım sırasında hata:", error));
@@ -1044,7 +1049,7 @@ const handleSendMessage = async (event) => {
         navigator.clipboard.writeText(shareUrl).then(
           () => {
             displaySystemNotification(
-              `Tarayıcınız otomatik paylaşımı desteklemiyor. Davet linki panonuza kopyalandı: ${shareUrl}`
+              `Tarayıcınız paylaşımı desteklemiyor. Davet linki panonuza kopyalandı | ${shareUrl}`
             );
           },
           (err) => {
@@ -2861,7 +2866,7 @@ window.addEventListener("load", () => {
       birthdayInput.required = false;
     }
     displaySystemNotification(
-      `"${initialCustomRoomName}" odasına katılınıyor...`
+      `${initialCustomRoomName} odasına katılınıyor...`
     );
   }
 
