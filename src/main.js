@@ -146,6 +146,10 @@ let birthdayCelebrationTimeout;
 
 const callSFX = [outgoingCallSound, incomingCallSound, callEndSound];
 
+const SHARE_BASE_URL = "https://tinday.app.tc/";
+let originalBirthdayRoomName = "";
+let initialCustomRoomName = null;
+
 let socket = null;
 let myName = "";
 let myPeerId = "";
@@ -356,7 +360,8 @@ function loadUserData() {
 }
 
 function checkFormValidity() {
-  connectBtn.disabled = !nameInput.value || !birthdayInput.value;
+  connectBtn.disabled =
+    !nameInput.value || (birthdayInput.required && !birthdayInput.value);
 }
 
 function populateFormWithPreviousData() {
@@ -470,7 +475,10 @@ const handleConnect = (event) => {
   let name = nameInput.value.trim();
   name = DOMPurify.sanitize(name);
   const birthday = birthdayInput.value;
-  saveUserData(name, birthday);
+
+  if (!initialCustomRoomName) {
+    saveUserData(name, birthday);
+  }
 
   myName = `${name}#${generateSafeUniqueTag()}`;
   myPeerId = myName
@@ -479,11 +487,28 @@ const handleConnect = (event) => {
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  const date = new Date(birthday);
-  const month = date.getUTCMonth() + 1;
-  const day = date.getUTCDate();
-  roomName = `TwinDayBirthdayChat${month}${day}`;
-  chatRoomNameHeader.textContent = `${day}/${month} Doğumlular | Beta`;
+  if (initialCustomRoomName) {
+    const sanitizedRoomName = initialCustomRoomName
+      .replace(/[^a-zA-Z0-9\s-]/g, "")
+      .trim()
+      .substring(0, 50);
+    roomName = `TwinDayCustomRoom_${sanitizedRoomName}`;
+    chatRoomNameHeader.textContent = `${sanitizedRoomName} | Özel Oda`;
+    if (birthday) {
+      const date = new Date(birthday);
+      const month = date.getUTCMonth() + 1;
+      const day = date.getUTCDate();
+      originalBirthdayRoomName = `TwinDayBirthdayChat${month}${day}`;
+    }
+  } else {
+    const date = new Date(birthday);
+    const month = date.getUTCMonth() + 1;
+    const day = date.getUTCDate();
+    roomName = `TwinDayBirthdayChat${month}${day}`;
+    originalBirthdayRoomName = roomName;
+    chatRoomNameHeader.textContent = `${day}/${month} Doğumlular | Beta`;
+  }
+
   connectBtn.disabled = true;
   connectBtn.textContent = "Bağlanılıyor...";
 
@@ -532,11 +557,18 @@ const handleStatusCode = async (packet) => {
     } else if (packet.listener === "link") {
       welcomeScreen.style.display = "none";
       chatScreen.style.display = "flex";
+      if (initialCustomRoomName) {
+        window.history.pushState({}, document.title, window.location.pathname);
+        initialCustomRoomName = null;
+        displaySystemNotification(
+          'Arkadaşlarınızı davet etmek için "t.sro" yazınız.'
+        );
+      }
 
       await FavoritesDB.init();
       initializePeerConnection();
       const userData = loadUserData();
-      if (userData) {
+      if (userData && userData.birthdate) {
         initializeBirthdayCelebration(userData.birthdate, roomName);
       }
       if (!newsPollingStarted) {
@@ -550,6 +582,11 @@ const handleStatusCode = async (packet) => {
       displaySystemNotification(
         `${chatRoomNameHeader.textContent} odasına geçildi.`
       );
+      if (roomName.startsWith("TwinDayCustomRoom_")) {
+        displaySystemNotification(
+          'Arkadaşlarınızı davet etmek için "t.sro" yazınız.'
+        );
+      }
       isSwitchingRooms = false;
     }
   } else {
@@ -957,6 +994,72 @@ const handleSendMessage = async (event) => {
       enableP2P();
     } else {
       disableP2P();
+    }
+    messageInput.value = "";
+    return;
+  }
+
+  const createRoomRegex = /^t\.(createroom|cro)\s+([\s\S]+)/i;
+  const createRoomMatch = messageText.match(createRoomRegex);
+  if (createRoomMatch) {
+    const newCustomRoom = createRoomMatch[2].trim();
+    if (newCustomRoom) {
+      const sanitizedRoomName = newCustomRoom
+        .replace(/[^a-zA-Z0-9\s-]/g, "")
+        .trim()
+        .substring(0, 50);
+      if (sanitizedRoomName) {
+        const fullRoomName = `TwinDayCustomRoom_${sanitizedRoomName}`;
+        const displayRoomName = `${sanitizedRoomName} | Özel Oda`;
+        switchRoom(fullRoomName, displayRoomName);
+      } else {
+        displaySystemNotification("Geçersiz oda adı.", "error");
+      }
+    } else {
+      displaySystemNotification("Lütfen bir oda adı belirtin.", "error");
+    }
+    messageInput.value = "";
+    return;
+  }
+
+  const shareRoomRegex = /^t\.(shareroom|sro)$/i;
+  if (shareRoomRegex.test(messageText)) {
+    if (roomName.startsWith("TwinDayCustomRoom_")) {
+      const customRoomNamePart = roomName.substring(
+        "TwinDayCustomRoom_".length
+      );
+      const shareUrl = `${SHARE_BASE_URL}?room=${encodeURIComponent(
+        customRoomNamePart
+      )}`;
+
+      if (navigator.share) {
+        navigator
+          .share({
+            title: "TinDay Sohbet Odası Daveti",
+            text: `Seni "${customRoomNamePart}" odasına davet ediyorum!`,
+            url: shareUrl,
+          })
+          .catch((error) => console.log("Paylaşım sırasında hata:", error));
+      } else {
+        navigator.clipboard.writeText(shareUrl).then(
+          () => {
+            displaySystemNotification(
+              `Tarayıcınız otomatik paylaşımı desteklemiyor. Davet linki panonuza kopyalandı: ${shareUrl}`
+            );
+          },
+          (err) => {
+            displaySystemNotification(
+              "Panoa kopyalama başarısız oldu.",
+              "error"
+            );
+          }
+        );
+      }
+    } else {
+      displaySystemNotification(
+        "Bu komut sadece özel odalarda kullanılabilir.",
+        "error"
+      );
     }
     messageInput.value = "";
     return;
@@ -1415,6 +1518,16 @@ function displayHelpMessage() {
       cmd: "t.birthdaychat",
       alias: "t.brc",
       desc: "Kendi doğum günü sohbetinize geri döner.",
+    },
+    {
+      cmd: "t.createroom <oda adı>",
+      alias: "t.cro",
+      desc: "Özel bir sohbet odası oluşturur veya katılır.",
+    },
+    {
+      cmd: "t.shareroom",
+      alias: "t.sro",
+      desc: "Bulunduğunuz özel odayı paylaşır.",
     },
     {
       cmd: "t.emojimerge <e1><e2>",
@@ -2515,22 +2628,20 @@ function switchToGlobalChat() {
 }
 
 function switchToBirthdayChat() {
-  const birthday = birthdayInput.value;
-  if (!birthday) {
+  if (!originalBirthdayRoomName) {
     displaySystemNotification(
-      "Doğum günü odasına dönmek için giriş ekranındaki doğum tarihi bilgisi gerekli.",
+      "Doğum günü odasına dönmek için bu odaya normal yollarla (doğum tarihi girerek) girmiş olmalısınız.",
       "error"
     );
     return;
   }
 
-  const date = new Date(birthday);
+  const date = new Date(birthdayInput.value);
   const month = date.getUTCMonth() + 1;
   const day = date.getUTCDate();
-  const newRoomName = `TwinDayBirthdayChat${month}${day}`;
   const displayRoomName = `${day}/${month} Doğumlular | Beta`;
 
-  switchRoom(newRoomName, displayRoomName);
+  switchRoom(originalBirthdayRoomName, displayRoomName);
 }
 
 function switchRoom(newRoomName, displayRoomName) {
@@ -2740,9 +2851,24 @@ function initializeFeatureStates() {
 window.addEventListener("load", () => {
   initializeFeatureStates();
   checkScreenSize();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  initialCustomRoomName = urlParams.get("room");
+
+  if (initialCustomRoomName) {
+    if (birthdayInput && birthdayInput.parentElement) {
+      birthdayInput.parentElement.style.display = "none";
+      birthdayInput.required = false;
+    }
+    displaySystemNotification(
+      `"${initialCustomRoomName}" odasına katılınıyor...`
+    );
+  }
+
   if (loadUserData()) {
     previousUserDiv.style.display = "block";
   }
+
   checkFormValidity();
   displaySystemNotification("Komutlar için 't.help' yazabilirsiniz.");
 });
