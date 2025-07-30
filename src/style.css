@@ -1123,14 +1123,25 @@ body[data-theme="dark"] .message-reply-container {
 #inbox-button.has-notification::after {
   content: "";
   position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 9px;
-  height: 9px;
-  background-color: #ff3b30;
+  top: -1px;
+  left: -1px;
+  width: 15px;
+  height: 15px;
+  background-color: #ff2115e9;
   border-radius: 50%;
-  border: 1.5px solid var(--card);
-  box-shadow: 0 0 3px rgba(255, 59, 48, 0.7);
+  animation: fadeInOut 1.7s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
 }
 
 #inbox-panel {
@@ -1454,4 +1465,37 @@ body[data-theme="dark"] .message-reply-container {
   .actions-popup {
     bottom: 52px;
   }
+}
+
+.message-system-group {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  user-select: none;
+}
+
+.message-system-group.is-grouped .system-group-icon {
+  display: inline-block;
+}
+
+.system-group-content {
+  flex-grow: 1;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.system-group-counter {
+  margin-left: 5px;
+  font-size: 0.8em;
+  color: var(--text-light);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: bold;
+  display: none;
+}
+
+.message-system-group.is-grouped .system-group-counter {
+  display: inline-block;
 }
