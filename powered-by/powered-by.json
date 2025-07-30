@@ -13,6 +13,11 @@
     "redirectUrl": "https://elevenlabs.io/"
   },
   {
+    "imageUrl": "powered-by/Powered-by-Hkb44.png",
+    "redirectUrl": "https://hasankb.netlify.app/",
+	"verified": true
+  },
+  {
     "imageUrl": "powered-by/Powered-by-SiteAc.png",
     "redirectUrl": "https://www.site.ac/"
   },
