@@ -5,6 +5,14 @@ const CALLS_DISABLED_KEY = "tinday_calls_disabled";
 const INSTA_PROFILE_URL = "https://instagram.com/tindayofficial";
 const MAX_MESSAGES = 150;
 
+const RANDOM_BIRTHDAY_GIFS = [
+  "https://media.tenor.com/bh9MAiCpL6wAAAAi/birthday-cake.gif",
+  "https://media.tenor.com/MD9C0lVAmR0AAAAm/cake-candle.webp",
+  "https://media.tenor.com/IXRjBiRK6LQAAAAm/happy-birthday-molang.webp",
+  "https://media.tenor.com/vuafm8ov--kAAAAM/budding-pop-happy-birthday.gif",
+  "https://media.tenor.com/nfgqq11i6MYAAAAm/happy-birthday.webp",
+];
+
 const TRUSTED_SOCIAL_DOMAINS = {
   "instagram.com": { name: "Instagram", icon: "fa-brands fa-instagram" },
   "twitter.com": { name: "Twitter", icon: "fa-brands fa-twitter" },
@@ -183,9 +191,9 @@ const SPAM_WINDOW_MS = 15000;
 const COOLDOWN_DURATION_MS = 3 * 60 * 1000;
 const THROTTLE_INTERVAL_MS = 9 * 1000;
 const userMessageTracker = new Map();
+const SYSTEM_GROUP_MAX_INTERNAL_MESSAGES = 25;
 let countdownInterval;
 let urlToOpen = "";
-let reconnectTimer = null;
 let isCallActive = false;
 let inboxRequests = new Map();
 let areCallsEnabled = true;
@@ -193,6 +201,11 @@ let areInboxEnabled = true;
 let incomingFileTransfers = new Map();
 let isMouseOverMessage = false;
 let lastHoveredMessageId = null;
+let isReconnecting = false;
+let reconnectTimer = null;
+let pendingMessages = [];
+let callControlConnection = null;
+let isCleaningUp = false;
 
 console.log("%cDİKKAT!", "color: red; font-weight: bold; font-size: 45px;");
 console.log(
@@ -465,8 +478,14 @@ const generateSafeUniqueTag = () => {
 const sendMessageToServer = (payload) => {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(payload));
+  } else if (payload.cmd === "gmsg") {
+    pendingMessages.push(payload);
+    displaySystemNotification(
+      "Bağlantı kesildi. Mesajınız bağlantı kurulduğunda gönderilecek.",
+      "info"
+    );
   } else {
-    console.error("Socket Error");
+    console.error("Socket is not open.");
   }
 };
 
@@ -520,30 +539,31 @@ const handleConnect = (event) => {
       listener: "username_cfg",
     });
   };
-  socket.onmessage = (event) => {
-    const packet = JSON.parse(event.data);
-    switch (packet.cmd) {
-      case "statuscode":
-        handleStatusCode(packet);
-        break;
-      case "gmsg":
-        handleIncomingMessage(packet);
-        break;
+
+  socket.onmessage = handleSocketMessage;
+  socket.onclose = handleSocketClose;
+  socket.onerror = (e) => {
+    if (!isReconnecting) {
+      displaySystemNotification(
+        "Bir bağlantı sorunu oluştu, sayfayı yenileyiniz.",
+        "error"
+      );
     }
-  };
-  socket.onclose = () => {
-    displaySystemNotification(
-      "Sohbetten bağlantı sorunu oluştu, sayfayı yenileyiniz.",
-      "error"
-    );
-  };
-  socket.onerror = (error) => {
-    displaySystemNotification(
-      "Bir bağlantı sorunu oluştu, sayfayı yenileyiniz.",
-      "error"
-    );
+    console.error("Socket Error");
   };
 };
+
+function handleSocketMessage(event) {
+  const packet = JSON.parse(event.data);
+  switch (packet.cmd) {
+    case "statuscode":
+      handleStatusCode(packet);
+      break;
+    case "gmsg":
+      handleIncomingMessage(packet);
+      break;
+  }
+}
 
 let newsPollingStarted = !1;
 const handleStatusCode = async (packet) => {
@@ -555,6 +575,17 @@ const handleStatusCode = async (packet) => {
         listener: "link",
       });
     } else if (packet.listener === "link") {
+      if (isReconnecting) {
+        displaySystemNotification(
+          "Bağlantı başarıyla yeniden kuruldu.",
+          "info"
+        );
+        isReconnecting = false;
+        reconnectAttempts = 0;
+        clearTimeout(reconnectTimer);
+        processPendingMessages();
+      }
+
       welcomeScreen.style.display = "none";
       chatScreen.style.display = "flex";
 
@@ -606,20 +637,58 @@ const handleStatusCode = async (packet) => {
       );
       isSwitchingRooms = false;
     } else {
-      displaySystemNotification(
-        "Bir sorun oluştu, lütfen sayfayı yenileyiniz.",
-        "error"
-      );
+      if (isReconnecting) {
+        console.error("Reconnection failed.");
+      } else {
+        displaySystemNotification(
+          "Bir sorun oluştu, lütfen sayfayı yenileyiniz.",
+          "error"
+        );
+      }
     }
   }
 };
 
 const displaySystemNotification = (message) => {
-  const messageDiv = document.createElement("div");
-  messageDiv.classList.add("message", "message-system");
-  messageDiv.textContent = message;
-  messagesContainer.appendChild(messageDiv);
-  totalMessageCount++;
+  const lastMessageEl = messagesContainer.lastElementChild;
+  if (
+    lastMessageEl &&
+    lastMessageEl.classList.contains("message-system-group")
+  ) {
+    const groupData = lastMessageEl.groupData;
+    if (groupData.messages.length >= SYSTEM_GROUP_MAX_INTERNAL_MESSAGES) {
+      groupData.messages.shift();
+      if (groupData.currentIndex > 0) {
+        groupData.currentIndex--;
+      }
+    }
+    groupData.messages.push(message);
+    groupData.currentIndex = groupData.messages.length - 1;
+    updateSystemGroupUI(lastMessageEl);
+  } else {
+    const groupDiv = document.createElement("div");
+    groupDiv.classList.add("message", "message-system", "message-system-group");
+    groupDiv.innerHTML = `
+      <p class="system-group-content"></p>
+      <span class="system-group-counter"></span>
+    `;
+
+    groupDiv.groupData = {
+      messages: [message],
+      currentIndex: 0,
+    };
+
+    groupDiv.addEventListener("click", () => {
+      const data = groupDiv.groupData;
+      data.currentIndex = (data.currentIndex + 1) % data.messages.length;
+      updateSystemGroupUI(groupDiv);
+    });
+
+    messagesContainer.appendChild(groupDiv);
+    totalMessageCount++;
+    updateSystemGroupUI(groupDiv);
+  }
+
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 };
 
@@ -701,7 +770,7 @@ const handleGlobalMessage = (packet) => {
       displayMessage(messageData, false, false);
     }
   } catch (e) {
-    console.warn("Received non-JSON GMSG ", packet.val, e);
+    console.warn("Received non-JSON GMSG");
   }
 };
 
@@ -1042,7 +1111,7 @@ const handleSendMessage = async (event) => {
           .share({
             url: shareUrl,
           })
-          .catch((error) => console.log("Paylaşım sırasında hata:", error));
+          .catch((e) => console.log("Share Error"));
       } else {
         navigator.clipboard.writeText(shareUrl).then(
           () => {
@@ -1085,7 +1154,7 @@ const handleSendMessage = async (event) => {
       displayLocalAiMessage(aiResponse, "Yapay Zeka");
     } catch (error) {
       console.error("AI Error");
-      displayLocalAiMessage(`Bir hata oluştu: ${error.message}`, "Yapay Zeka");
+      displayLocalAiMessage(`Üzgünüm bir hata oluştu.`, "Yapay Zeka");
     }
     return;
   }
@@ -1740,6 +1809,17 @@ document.addEventListener("keydown", (e) => {
       }
     }
   }
+
+  if (
+    document.activeElement === messageInput ||
+    e.ctrlKey ||
+    e.metaKey ||
+    e.altKey
+  )
+    return;
+  if (/^[a-z]$/i.test(e.key)) {
+    messageInput.focus();
+  }
 });
 
 function showDownloadConfirmation(fileData) {
@@ -1957,8 +2037,9 @@ async function hideCallPanel() {
       callPanel.classList.remove("in-call");
       acceptCallBtn.disabled = false;
       acceptCallBtn.style.cssText = "";
+      isCleaningUp = false;
     }
-  }, 500);
+  }, 600);
 }
 
 function startCallTimer() {
@@ -2165,63 +2246,57 @@ function initializePeerEvents(p) {
   p.on("open", (id) => {
     reconnectAttempts = 0;
     displaySystemNotification("P2P Açıldı.");
-    spamTracker = {};
   });
 
   p.on("error", (err) => {
-    if (err.type === "peer-unavailable") {
+    console.error("PeerJS Error", err.type);
+    if (err.type === "peer-unavailable" && (isCallActive || isCleaningUp)) {
       displaySystemNotification(
-        "Hedef kullanıcı bulunamadı, çevrimdışı veya P2P'e kapalı.",
+        "Kullanıcı bulunamadı, çevrimdışı veya P2P'e kapalı.",
         "error"
       );
-      if (currentCall) {
-        hangupLogic();
-      }
     }
+    hangupLogic(false);
   });
 
   p.on("disconnected", handlePeerDisconnect);
 
   p.on("call", (incomingCall) => {
-    if (!areCallsEnabled) {
-      incomingCall.close();
-      console.log("Gelen Arama reddedildi. (Aramalar Kapalı)");
-      return;
-    }
-
-    const isPermanentlyDisabled =
-      localStorage.getItem(CALLS_DISABLED_KEY) === "true";
-
-    if (callsDisabledForSession || isPermanentlyDisabled || isCallActive) {
-      incomingCall.close();
-      return;
-    }
-
     if (currentCall) {
-      incomingCall.close();
-      return;
+      currentCall.close();
     }
-
-    isCallActive = true;
-
     currentCall = incomingCall;
-    const callerDisplayName = incomingCall.peer.split("-")[0];
-    showCallPanel(callerDisplayName);
-    currentCall.on("close", () => {
-      hangupLogic(false);
-    });
   });
 
   p.on("connection", (conn) => {
-    conn.on("open", () => {
-      if (currentCall && conn.label !== "file-transfer") {
-        conn.send({ type: "status", message: "busy" });
-        setTimeout(() => conn.close(), 250);
+    if (conn.label === "call-control") {
+      if (isCallActive || isCleaningUp || !areCallsEnabled) {
+        conn.on("open", () => {
+          conn.send({ type: "call-rejected", reason: "busy" });
+          setTimeout(() => conn.close(), 250);
+        });
         return;
       }
-      reconnectAttempts = 0;
+
+      isCallActive = true;
+      callControlConnection = conn;
+
+      conn.on("data", (data) => {
+        if (!isCallActive) return;
+        if (data.type === "call-request") {
+          const callerDisplayName = data.from || "Bilinmeyen";
+          showCallPanel(callerDisplayName, false);
+        } else if (data.type === "hangup") {
+          hangupLogic(false);
+          _LOGIC_;
+        }
+      });
+
+      conn.on("close", () => hangupLogic(false));
+      conn.on("error", () => hangupLogic(false));
+    } else {
       setupDataConnectionEvents(conn);
-    });
+    }
   });
 }
 
@@ -2276,65 +2351,64 @@ async function setupCallEvents(call) {
 }
 
 async function hangupLogic(sendHangupSignal = true) {
-  if (sendHangupSignal && dataConnection && dataConnection.open) {
-    try {
-      dataConnection.send({ type: "hangup" });
-    } catch (e) {
-      console.error("Error");
-    }
+  if (!isCallActive && !isCleaningUp) {
+    return;
   }
 
-  const callToClose = currentCall;
-  const connToClose = dataConnection;
-  currentCall = null;
-  dataConnection = null;
+  isCleaningUp = true;
+  isCallActive = false;
+
+  if (sendHangupSignal && callControlConnection && callControlConnection.open) {
+    try {
+      callControlConnection.send({ type: "hangup" });
+    } catch (e) {
+      console.error("Hangup Error ", e);
+    }
+  }
 
   if (localStream) {
     localStream.getTracks().forEach((track) => track.stop());
     localStream = null;
   }
   remoteAudioContainer.innerHTML = "";
-  if (callToClose) {
-    callToClose.close();
+
+  if (currentCall) {
+    currentCall.close();
+    currentCall.off("close");
+    currentCall.off("stream");
+    currentCall.off("error");
   }
-  if (connToClose) {
-    connToClose.close();
+  if (callControlConnection) {
+    callControlConnection.close();
+    callControlConnection.off("data");
+    callControlConnection.off("open");
+    callControlConnection.off("close");
+    callControlConnection.off("error");
   }
-  const isInCall = callPanel.classList.contains("in-call");
-  if (isInCall) {
-    hideCallPanel();
-  } else {
-    await stopAllSoundsWithFade();
-    setTimeout(hideCallPanel, 2000);
-  }
-  isCallActive = false;
+
+  currentCall = null;
+  callControlConnection = null;
+
+  hideCallPanel();
 }
 
 async function initiateCall(targetRawId) {
-  if (isCallActive) {
+  if (isCallActive || isCleaningUp) {
     displaySystemNotification(
-      "Lütfen mevcut görüşmenin bitmesini bekleyin.",
+      "Lütfen mevcut görüşmenin bitmesini veya sonlanmasını bekleyin.",
       "info"
     );
     return;
   }
   if (!peer || peer.disconnected) {
     displaySystemNotification(
-      "Arama sorunu oluştu veya Aramalara kapalısınız.",
+      "P2P bağlantısı aktif değil. Aramalar kapalı olabilir.",
       "error"
     );
     return;
   }
-  if (currentCall) {
-    displaySystemNotification("Zaten bir görüşmedesiniz.", "error");
-    return;
-  }
-  if (!targetRawId) {
-    alert("Aranacak kişi seçilemedi.");
-    return;
-  }
   if (targetRawId === myName) {
-    alert("Kendinizi arayamazsınız.");
+    displaySystemNotification("Kendinizi arayamazsınız.", "info");
     return;
   }
 
@@ -2346,42 +2420,58 @@ async function initiateCall(targetRawId) {
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: false,
-      audio: true,
-    });
+  const conn = peer.connect(targetPeerId, {
+    label: "call-control",
+    reliable: true,
+  });
+  callControlConnection = conn;
 
-    const conn = peer.connect(targetPeerId);
+  conn.on("open", () => {
+    if (!isCallActive) return;
+    conn.send({ type: "call-request", from: myName });
+    showCallPanel(targetRawId, true);
+  });
 
-    conn.on("data", (data) => {
-      if (data && data.type === "status" && data.message === "busy") {
-        const targetDisplayName = targetRawId.split("#")[0];
+  conn.on("data", async (data) => {
+    if (!isCallActive) return;
+    if (data.type === "call-accepted") {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: false,
+          audio: true,
+        });
+        if (!isCallActive) {
+          localStream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        const call = peer.call(targetPeerId, localStream);
+        setupCallEvents(call);
+      } catch (err) {
         displaySystemNotification(
-          `${truncateText(
-            targetDisplayName,
-            33
-          )} Adlı kullanıcı şu anda meşgul.`,
-          "info"
+          "Mikrofona erişilemiyor. Lütfen tarayıcı izinlerini kontrol edin.",
+          "error"
         );
-        playSound(callEndSound);
-
-        hangupLogic(false);
-        conn.close();
+        hangupLogic(true);
       }
-    });
+    } else if (data.type === "call-rejected") {
+      const reasonText =
+        data.reason === "busy" ? "Meşgul." : "Aramayı reddetti.";
+      callerNameDiv.textContent = `${targetRawId.split("#")[0]} ${reasonText}`;
+      await playSound(callEndSound);
+      setTimeout(() => hangupLogic(false), 2000);
+    } else if (data.type === "hangup") {
+      hangupLogic(false);
+    }
+  });
 
-    setupDataConnectionEvents(conn);
-    await showCallPanel(targetRawId, true);
-    const call = peer.call(targetPeerId, localStream);
-    setupCallEvents(call);
-  } catch (err) {
+  conn.on("close", () => hangupLogic(false));
+  conn.on("error", (err) => {
     displaySystemNotification(
-      "Mikrofona erişilemiyor, Lütfen tarayıcı izinlerini kontrol edin.",
+      "Arama sırasında bir bağlantı hatası oluştu.",
       "error"
     );
-    hangupLogic();
-  }
+    hangupLogic(false);
+  });
 }
 
 function initializePeerConnection() {
@@ -2583,10 +2673,8 @@ document.getElementById("sendInboxUser").addEventListener("click", () => {
 });
 
 acceptCallBtn.addEventListener("click", async () => {
-  if (!currentCall || acceptCallBtn.disabled) return;
-
+  if (!callControlConnection || acceptCallBtn.disabled) return;
   acceptCallBtn.disabled = true;
-
   acceptCallBtn.style.transition =
     "opacity 0.3s, width 0.3s, padding 0.3s, margin 0.3s";
   acceptCallBtn.style.opacity = "0";
@@ -2596,32 +2684,52 @@ acceptCallBtn.addEventListener("click", async () => {
   acceptCallBtn.style.pointerEvents = "none";
 
   try {
+    callControlConnection.send({ type: "call-accepted" });
     localStream = await navigator.mediaDevices.getUserMedia({
       video: false,
       audio: true,
     });
-    currentCall.answer(localStream);
-    setupCallEvents(currentCall);
+
+    const waitForCall = new Promise((resolve, reject) => {
+      if (currentCall) return resolve(currentCall);
+      const timeout = setTimeout(
+        () => reject(new Error("Arama bağlantısı zaman aşımına uğradı.")),
+        5000
+      );
+      peer.once("call", (call) => {
+        clearTimeout(timeout);
+        if (call.peer === callControlConnection.peer) {
+          resolve(call);
+        } else {
+          call.close();
+        }
+      });
+    });
+
+    const callToAnswer = await waitForCall;
+
+    if (!isCallActive) {
+      localStream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+
+    callToAnswer.answer(localStream);
+    setupCallEvents(callToAnswer);
   } catch (err) {
     displaySystemNotification(
-      "Mikrofona erişilemiyor, Lütfen tarayıcı izinlerini kontrol edin.",
+      "Mikrofona erişilemiyor veya arama bağlantısı kurulamadı.",
       "error"
     );
-    hangupLogic();
+    hangupLogic(true);
   }
 });
 
 declineCallBtn.addEventListener("click", () => {
   const isRejectingIncomingCall =
-    acceptCallBtn.style.display !== "none" && currentCall;
-  const isCancellingOutgoingCall =
-    acceptCallBtn.style.display === "none" && currentCall;
-  const isInActiveCall = callPanel.classList.contains("in-call");
-
+    !callPanel.classList.contains("in-call") && callControlConnection;
   if (isRejectingIncomingCall) {
     playSound(callEndSound);
-
-    const callerId = currentCall.peer;
+    const callerId = callControlConnection.peer;
     if (!spamTracker[callerId]) {
       spamTracker[callerId] = { count: 0 };
     }
@@ -2632,7 +2740,7 @@ declineCallBtn.addEventListener("click", () => {
     }
   }
 
-  hangupLogic();
+  hangupLogic(true);
 });
 
 function switchToGlobalChat() {
@@ -3130,10 +3238,6 @@ async function initializeBirthdayCelebration(userBirthdate, roomName) {
   const birthDateObj = new Date(userBirthdate);
   const birthMonth = birthDateObj.getUTCMonth();
   const birthDay = birthDateObj.getUTCDate();
-  const yesterday_utc = new Date(now_utc.getTime() - 24 * 60 * 60 * 1000);
-  const wasBirthdayYesterday =
-    yesterday_utc.getUTCMonth() === birthMonth &&
-    yesterday_utc.getUTCDate() === birthDay;
   const birthdayStartThisYear_utc = new Date(
     Date.UTC(now_utc.getUTCFullYear(), birthMonth, birthDay)
   );
@@ -3143,10 +3247,21 @@ async function initializeBirthdayCelebration(userBirthdate, roomName) {
   isBirthdayToday =
     now_utc >= birthdayStartThisYear_utc && now_utc < birthdayEndThisYear_utc;
 
-  if (wasBirthdayYesterday) {
-    triggerOneDayLateCelebration(roomName);
-  } else if (isBirthdayToday) {
+  let birthdayThisYear_utc = new Date(
+    Date.UTC(now_utc.getUTCFullYear(), birthMonth, birthDay)
+  );
+  if (now_utc < birthdayThisYear_utc) {
+    birthdayThisYear_utc = new Date(
+      Date.UTC(now_utc.getUTCFullYear() - 1, birthMonth, birthDay)
+    );
+  }
+  const daysAgo = (now_utc - birthdayThisYear_utc) / (1000 * 60 * 60 * 24);
+  const wasBirthdayRecently = daysAgo > 0 && daysAgo <= 90;
+
+  if (isBirthdayToday) {
     triggerSameDayCelebration(roomName);
+  } else if (wasBirthdayRecently) {
+    triggerOneDayLateCelebration(roomName);
   }
 
   let targetBirthdayStart_utc;
@@ -3165,12 +3280,6 @@ async function initializeBirthdayCelebration(userBirthdate, roomName) {
       startBirthdayCountdown,
       timeUntilTarget
     );
-  } else if (timeUntilTarget > 30000) {
-    const timeUntilCountdown = timeUntilTarget - 30000;
-    birthdayCelebrationTimeout = setTimeout(
-      startBirthdayCountdown,
-      timeUntilCountdown
-    );
   }
 }
 
@@ -3188,10 +3297,14 @@ function triggerSameDayCelebration(roomName) {
     nowLocal.getTime() > midnightLocal.getTime() + 5 * 60 * 1000;
 
   let messageText = "";
+  const randomGif =
+    RANDOM_BIRTHDAY_GIFS[
+      Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
+    ];
   if (missedTheCountdown) {
-    messageText = `Doğum günün kutlu olsun ${myUsername}, Nice senelere! ❤️🥳🎉 https://media.tenor.com/bh9MAiCpL6wAAAAi/birthday-cake.gif`;
+    messageText = `Doğum günün kutlu olsun ${myUsername}, Nice senelere! ❤️🥳🎉 ${randomGif}`;
   } else {
-    messageText = `Geri sayımı kaçırdın ama olsun, Doğum günün kutlu olsun ${myUsername}, Nice senelere! ❤️🥳🎉 https://media.tenor.com/bh9MAiCpL6wAAAAi/birthday-cake.gif`;
+    messageText = `Geri sayımı kaçırdın ama olsun, Doğum günün kutlu olsun ${myUsername}, Nice senelere! ❤️🥳🎉 ${randomGif}`;
   }
   let messageSystemSenderName = "TinDay Official Team";
   let messageSystemInfo = "Bu mesaj size özel...";
@@ -3213,8 +3326,11 @@ function triggerOneDayLateCelebration(roomName) {
     return;
   }
   const myUsername = myName.split("#")[0];
-
-  const messageText = `Geçmiş doğum günün kutlu olsun ${myUsername}! Umarız harika bir gün geçirmişsindir... 🥳🎉 https://media.tenor.com/bh9MAiCpL6wAAAAi/birthday-cake.gif`;
+  const randomGif =
+    RANDOM_BIRTHDAY_GIFS[
+      Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
+    ];
+  const messageText = `Geçmiş doğum günün kutlu olsun ${myUsername}! Umarız harika bir gün geçirmişsindir... 🥳🎉 ${randomGif}`;
 
   let messageSystemSenderName = "TinDay Official Team";
   let messageSystemInfo = "Bu mesaj size özel...";
@@ -3229,38 +3345,59 @@ function triggerOneDayLateCelebration(roomName) {
 }
 
 function startBirthdayCountdown() {
-  messageInput.disabled = true;
-  messageInput.placeholder = "Doğum günü kutlaması yaklaşıyor...";
-  setTimeout(() => {
-    birthdayCountdownOverlay.classList.add("visible");
-    let count = 5;
-    countdownNumberEl.textContent = count;
+  let messageSystemSenderName = "TinDay Official Team";
+  let messageSystemInfo = "Bu mesaj size ve doğum günü ikizlerinize özel...";
+  displaySpecialSystemMessage(
+    "Doğum gününüze 30 Saniye kaldı, tüm doğum günü ikizlerinizle kutlamaya hazır mısınız? Geri sayım başlıyor!",
+    messageSystemSenderName,
+    messageSystemInfo
+  );
 
-    const interval = setInterval(() => {
-      count--;
-      if (count > 0) {
-        countdownNumberEl.textContent = count;
-      } else {
-        clearInterval(interval);
-        triggerBirthdayCelebration();
-      }
-    }, 1000);
-  }, 25000);
+  let preCount = 25;
+
+  const preInterval = setInterval(() => {
+    displaySystemNotification("Doğum gününüze " + preCount + " saniye kaldı!");
+
+    preCount--;
+
+    if (preCount <= 0) {
+      clearInterval(preInterval);
+      birthdayCountdownOverlay.classList.add("visible");
+      let count = 5;
+      countdownNumberEl.textContent = count;
+
+      const interval = setInterval(() => {
+        messageInput.disabled = true;
+        messageInput.placeholder = "Doğum günü kutlaması başlıyor...";
+        count--;
+        if (count > 0) {
+          countdownNumberEl.textContent = count;
+        } else {
+          clearInterval(interval);
+          triggerBirthdayCelebration();
+        }
+      }, 1000);
+    }
+  }, 1000);
 }
 
 function triggerBirthdayCelebration() {
   birthdayCountdownOverlay.classList.remove("visible");
   messageInput.disabled = false;
-  messageInput.placeholder = "Mesajınızı yazın...";
+  messageInput.placeholder = "Bir mesaj yaz... (Komutlar için t.help)";
 
   isBirthdayToday = true;
   startConfetti();
   birthdaySound.play().catch((e) => console.error("Birthday Sound Error"));
 
   const myUsername = myName.split("#")[0];
+  const randomGif =
+    RANDOM_BIRTHDAY_GIFS[
+      Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
+    ];
   const celebrationMessage = {
     sender: "Sistem",
-    content: `🎂 Doğum günün kutlu olsun ${myUsername}! Nice mutlu senelere! 🥳`,
+    content: `🎂 Doğum günün kutlu olsun ${myUsername}! Nice mutlu senelere! 🥳 ${randomGif}`,
     timestamp: new Date().toISOString(),
     id: "msg-birthday-" + Date.now(),
   };
@@ -3281,11 +3418,14 @@ function triggerPastBirthdayCelebration(roomName) {
     nowLocal.getTime() > midnightLocal.getTime() + 5 * 60 * 1000;
 
   let message = "";
-
+  const randomGif =
+    RANDOM_BIRTHDAY_GIFS[
+      Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
+    ];
   if (missedTheCountdown) {
-    message = `Doğum günün kutlu olsun ${myUsername}! ❤️🥳🎉`;
+    message = `Doğum günün kutlu olsun ${myUsername}! ❤️🥳🎉 ${randomGif}`;
   } else {
-    message = `Geri sayımı kaçırdın ama olsun, Doğum günün kutlu olsun ${myUsername}! ❤️🥳🎉`;
+    message = `Geri sayımı kaçırdın ama olsun, Doğum günün kutlu olsun ${myUsername}! ❤️🥳🎉 ${randomGif}`;
   }
 
   let messageSystemSenderName = "TinDay Official Team";
@@ -3305,7 +3445,6 @@ function cleanOldBirthdayCelebrations() {
   const currentYear = new Date().getUTCFullYear();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key) continue;
@@ -3359,4 +3498,107 @@ function sanitizeMessageObject(msg) {
   }
 
   return msg;
+}
+
+function processPendingMessages() {
+  if (pendingMessages.length === 0) return;
+
+  displaySystemNotification(
+    `Beklemedeki ${pendingMessages.length} mesaj gönderiliyor...`,
+    "info"
+  );
+
+  const interval = setInterval(() => {
+    if (pendingMessages.length === 0) {
+      clearInterval(interval);
+      return;
+    }
+    const messagePayload = pendingMessages.shift();
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(messagePayload));
+    } else {
+      pendingMessages.unshift(messagePayload);
+      clearInterval(interval);
+    }
+  }, 1000);
+}
+
+function handleSocketClose() {
+  if (isReconnecting || isSwitchingRooms) {
+    return;
+  }
+
+  isReconnecting = true;
+  reconnectAttempts = 0;
+  clearTimeout(reconnectTimer);
+
+  displaySystemNotification(
+    "Bağlantı kesildi. Yeniden bağlanmaya çalışılıyor...",
+    "info"
+  );
+
+  scheduleReconnect();
+}
+
+function scheduleReconnect() {
+  if (document.hidden) {
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (!document.hidden) {
+          doReconnectAttempt();
+        }
+      },
+      { once: true }
+    );
+  } else {
+    doReconnectAttempt();
+  }
+}
+
+function doReconnectAttempt() {
+  if (reconnectAttempts >= maxReconnectAttempts) {
+    displaySystemNotification(
+      "Bağlantı kurulamadı. Lütfen sayfayı yenileyiniz.",
+      "error"
+    );
+    isReconnecting = false;
+    return;
+  }
+
+  const delay = [3000, 5000, 7000][reconnectAttempts];
+
+  reconnectAttempts++;
+  displaySystemNotification(
+    `Yeniden bağlanılıyor... (${reconnectAttempts}/${maxReconnectAttempts})`,
+    "info"
+  );
+
+  reconnectTimer = setTimeout(() => {
+    socket = new WebSocket(CL_SERVER_IP);
+    socket.onopen = () => {
+      sendMessageToServer({
+        cmd: "setid",
+        val: myName,
+        listener: "username_cfg",
+      });
+    };
+    socket.onmessage = handleSocketMessage;
+    socket.onclose = handleSocketClose;
+  }, delay);
+}
+
+function updateSystemGroupUI(groupElement) {
+  const { groupData } = groupElement;
+  const contentEl = groupElement.querySelector(".system-group-content");
+  const counterEl = groupElement.querySelector(".system-group-counter");
+  if (!groupData || !contentEl || !counterEl) return;
+  const messageCount = groupData.messages.length;
+  const isGrouped = messageCount > 1;
+  contentEl.textContent = groupData.messages[groupData.currentIndex];
+  groupElement.classList.toggle("is-grouped", isGrouped);
+
+  if (isGrouped) {
+    counterEl.textContent = `${groupData.currentIndex + 1}/${messageCount}`;
+  }
 }
