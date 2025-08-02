@@ -3437,70 +3437,61 @@ document.getElementById("sendGiftUser").addEventListener("click", () => {
 
 async function initializeBirthdayCelebration(userBirthdate, roomName) {
   cleanOldBirthdayCelebrations();
-
   if (birthdayCelebrationTimeout) clearTimeout(birthdayCelebrationTimeout);
   if (birthdayCheckInterval) clearInterval(birthdayCheckInterval);
-
-  isBirthdayToday = false;
-  let now_utc = new Date();
-  const birthDateObj = new Date(userBirthdate);
-  const birthMonth = birthDateObj.getUTCMonth();
-  const birthDay = birthDateObj.getUTCDate();
-
-  const birthdayStartThisYear_utc = new Date(
-    Date.UTC(now_utc.getUTCFullYear(), birthMonth, birthDay)
+  const now = new Date();
+  const birthDateObj = new Date(userBirthdate + "T00:00:00");
+  const birthMonth = birthDateObj.getMonth();
+  const birthDay = birthDateObj.getDate();
+  const birthdayThisYear = new Date(now.getFullYear(), birthMonth, birthDay);
+  const birthdayEndThisYear = new Date(
+    birthdayThisYear.getTime() + 24 * 60 * 60 * 1000
   );
-  const birthdayEndThisYear_utc = new Date(
-    birthdayStartThisYear_utc.getTime() + 24 * 60 * 60 * 1000
-  );
-
-  isBirthdayToday =
-    now_utc >= birthdayStartThisYear_utc && now_utc < birthdayEndThisYear_utc;
-
-  let targetBirthdayStart_utc;
-  if (now_utc < birthdayStartThisYear_utc) {
-    targetBirthdayStart_utc = birthdayStartThisYear_utc;
-  } else {
-    const nextYear = now_utc.getUTCFullYear() + 1;
-    targetBirthdayStart_utc = new Date(
-      Date.UTC(nextYear, birthMonth, birthDay)
-    );
-  }
-
-  const timeUntilTarget = targetBirthdayStart_utc.getTime() - now_utc.getTime();
-
-  let birthdayThisYear_utc = new Date(
-    Date.UTC(now_utc.getUTCFullYear(), birthMonth, birthDay)
-  );
-  if (now_utc < birthdayThisYear_utc) {
-    birthdayThisYear_utc = new Date(
-      Date.UTC(now_utc.getUTCFullYear() - 1, birthMonth, birthDay)
-    );
-  }
-  const daysAgo = (now_utc - birthdayThisYear_utc) / (1000 * 60 * 60 * 24);
-  const wasBirthdayRecently = daysAgo > 0 && daysAgo <= 90;
+  isBirthdayToday = now >= birthdayThisYear && now < birthdayEndThisYear;
 
   if (isBirthdayToday) {
     triggerSameDayCelebration(roomName);
-  } else if (wasBirthdayRecently) {
+    return;
+  }
+
+  let nextBirthday;
+  if (now < birthdayThisYear) {
+    nextBirthday = birthdayThisYear;
+  } else {
+    nextBirthday = new Date(now.getFullYear() + 1, birthMonth, birthDay);
+  }
+
+  const timeUntilNextBirthday = nextBirthday.getTime() - now.getTime();
+
+  if (
+    timeUntilNextBirthday > 0 &&
+    timeUntilNextBirthday <= 24 * 60 * 60 * 1000
+  ) {
+    scheduleUpcomingBirthdayCheck(nextBirthday);
+    return;
+  }
+
+  const timeSinceBirthday = now.getTime() - birthdayThisYear.getTime();
+  const wasBirthdayRecently =
+    timeSinceBirthday > 0 && timeSinceBirthday < 90 * 24 * 60 * 60 * 1000;
+
+  if (wasBirthdayRecently) {
     triggerOneDayLateCelebration(roomName);
-  } else if (timeUntilTarget > 0 && timeUntilTarget <= 24 * 60 * 60 * 1000) {
-    scheduleBirthdayCountdown(targetBirthdayStart_utc);
   }
 }
 
-function scheduleBirthdayCountdown(targetBirthdayDate) {
+function scheduleUpcomingBirthdayCheck(targetBirthdayDate) {
   if (birthdayCheckInterval) clearInterval(birthdayCheckInterval);
 
   birthdayCheckInterval = setInterval(() => {
     const now = new Date();
     const remainingMs = targetBirthdayDate.getTime() - now.getTime();
-
     if (remainingMs <= 30000 && remainingMs > 0) {
       clearInterval(birthdayCheckInterval);
       startDynamicBirthdayCountdown(remainingMs);
     } else if (remainingMs <= 0) {
       clearInterval(birthdayCheckInterval);
+      triggerBirthdayCelebration();
     }
   }, 1000);
 }
@@ -3537,37 +3528,38 @@ function startDynamicBirthdayCountdown(remainingMs) {
 }
 
 function triggerSameDayCelebration(roomName) {
-  const celebratedKey = `celebrated_${roomName}_${new Date().getUTCFullYear()}`;
+  const celebratedKey = `celebrated_${roomName}_${new Date().getFullYear()}`;
   if (localStorage.getItem(celebratedKey)) {
     return;
   }
+
   const myUsername = myName.split("#")[0];
-
-  const nowLocal = new Date();
-  const midnightLocal = new Date(nowLocal);
-  midnightLocal.setHours(0, 0, 0, 0);
-  const missedTheCountdown =
-    nowLocal.getTime() > midnightLocal.getTime() + 5 * 60 * 1000;
-
-  let messageText = "";
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setHours(0, 0, 0, 0);
+  const threeHoursInMs = 3 * 60 * 60 * 1000;
+  const timeSinceMidnight = now.getTime() - midnight.getTime();
+  let message = "";
   const randomGif =
     RANDOM_BIRTHDAY_GIFS[
       Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
     ];
-  if (missedTheCountdown) {
-    messageText = `Doğum günün kutlu olsun ${myUsername}, Nice senelere! ❤️🥳🎉 ${randomGif}`;
+
+  if (timeSinceMidnight <= threeHoursInMs) {
+    message = `Geri sayımı kaçırdın ama olsun, Doğum günün kutlu olsun ${myUsername}! ❤️🥳🎉 ${randomGif}`;
   } else {
-    messageText = `Geri sayımı kaçırdın ama olsun, Doğum günün kutlu olsun ${myUsername}, Nice senelere! ❤️🥳🎉 ${randomGif}`;
+    message = `Doğum günün kutlu olsun ${myUsername}! Nice senelere! ❤️🥳🎉 ${randomGif}`;
   }
+
   let messageSystemSenderName = "TinDay Official Team";
   let messageSystemInfo = "Bu mesaj size özel...";
   displaySpecialSystemMessage(
-    messageText,
+    message,
     messageSystemSenderName,
     messageSystemInfo
   );
+
   startConfetti();
-  birthdayShortSound.play().catch((e) => console.error("Birthday Sound Error"));
   localStorage.setItem(celebratedKey, "true");
 }
 
@@ -3666,7 +3658,7 @@ function triggerPastBirthdayCelebration(roomName) {
   const midnightLocal = new Date(nowLocal);
   midnightLocal.setHours(0, 0, 0, 0);
   const missedTheCountdown =
-    nowLocal.getTime() > midnightLocal.getTime() + 5 * 60 * 1000;
+    nowLocal.getTime() <= midnightLocal.getTime() + 3 * 60 * 60 * 1000;
 
   let message = "";
   const randomGif =
@@ -3688,7 +3680,6 @@ function triggerPastBirthdayCelebration(roomName) {
   );
 
   startConfetti();
-
   localStorage.setItem(celebratedKey, "true");
 }
 
