@@ -1,5 +1,6 @@
 const CL_SERVER_IP = "wss://cl.mikedev101.cc/";
-const OFFICIAL_BADGE_SVG = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0,0,465.20362,447.89812"><g transform="translate(-7.39819,43.94906)"><g stroke="none" stroke-miterlimit="10"><path d="M94.68849,180c0,-80.25333 65.05818,-145.31151 145.31151,-145.31151c80.25333,0 145.31151,65.05818 145.31151,145.31151c0,80.25333 -65.05818,145.31151 -145.31151,145.31151c-80.25333,0 -145.31151,-65.05818 -145.31151,-145.31151z" fill="#ffffff" stroke-width="0.5"/><path d="M472.60181,179.87075c-1.42407,17.55884 -7.62996,34.39231 -17.94421,48.67367c-3.75179,5.79794 -6.90806,11.96019 -9.42071,18.39281c-1.95158,6.94677 -3.08082,14.09864 -3.36454,21.30875c-0.27238,17.15747 -5.23697,33.91293 -14.35537,48.44936c-11.12537,13.19007 -25.62227,23.11308 -41.94459,28.71073c-6.66115,2.57079 -13.04823,5.8019 -19.06572,9.64501c-5.37594,4.4727 -10.33127,9.42803 -14.80397,14.80397c-10.23564,14.05759 -24.22988,24.942 -40.37447,31.40237c-16.57589,3.96782 -33.90407,3.50367 -50.24379,-1.34582c-14.28515,-3.57073 -29.22956,-3.57073 -43.51471,0c-9.85595,2.36192 -19.92668,3.7147 -30.05655,4.03745c-6.61272,-0.00785 -13.18816,-0.99039 -19.51433,-2.91593c-16.14459,-6.46037 -30.13883,-17.34478 -40.37447,-31.40237c-4.4727,-5.37594 -9.42803,-10.33127 -14.80397,-14.80397c-6.0175,-3.84312 -12.40458,-7.07423 -19.06572,-9.64501c-16.32232,-5.59766 -30.81922,-15.52066 -41.94459,-28.71073c-9.1184,-14.53643 -14.08298,-31.29189 -14.35537,-48.44936c-0.28372,-7.21011 -1.41296,-14.36198 -3.36454,-21.30875c-2.42134,-6.47332 -5.58254,-12.64519 -9.42071,-18.39281c-10.0366,-14.28865 -16.00598,-31.03392 -17.2713,-48.44936c1.18513,-17.57041 7.15814,-34.48103 17.2713,-48.89797c3.75179,-5.79794 6.90806,-11.96019 9.42071,-18.39281c2.1673,-6.76892 3.52262,-13.77139 4.03745,-20.86014c0.09249,-17.09039 4.82138,-33.83529 13.68246,-48.44936c11.18697,-13.22347 25.76532,-23.14915 42.16889,-28.71073c6.66115,-2.57079 13.04823,-5.8019 19.06572,-9.64501c5.37594,-4.4727 10.33127,-9.42803 14.80397,-14.80397c10.42666,-14.05617 24.56268,-24.93004 40.82308,-31.40237c16.58334,-4.01459 33.94347,-3.47209 50.24379,1.57012c14.30998,3.36293 29.20473,3.36293 43.51471,0c16.02034,-4.87948 33.04845,-5.42128 49.34658,-1.57012c16.0966,6.54375 30.06983,17.41181 40.37447,31.40237c4.3306,5.35596 9.13516,10.31066 14.35537,14.80397c6.0175,3.84312 12.40458,7.07423 19.06572,9.64501c16.32232,5.59766 30.81922,15.52066 41.94459,28.71073c9.09748,14.54587 14.06029,31.29538 14.35537,48.44936c0.51483,7.08875 1.87014,14.09122 4.03745,20.86014c2.48486,6.58733 5.64177,12.90113 9.42071,18.84142c10.0366,14.28865 16.00598,31.03392 17.2713,48.44936zM345.64653,119.08474c-8.7954,-8.7954 -23.05557,-8.7954 -31.85097,0l-96.22582,96.45012l-51.3653,-51.5896c-8.7954,-8.7954 -23.05557,-8.7954 -31.85097,0c-8.7954,8.7954 -8.7954,23.05557 0,31.85097l67.29078,67.29078c4.21165,4.24633 9.94474,6.63483 15.92549,6.63483c5.98075,0 11.71383,-2.3885 15.92549,-6.63483l112.15131,-112.15131c8.7954,-8.7954 8.7954,-23.05557 0,-31.85097z" fill="#fc918c" stroke-width="1"/></g></g></svg>`;
+const OFFICIAL_BADGE_SVG = document.getElementById("official-badge").innerHTML;
+const AUTO_BLOCKER_SVG = document.getElementById("autoblocker-badge").innerHTML;
 const LOCAL_STORAGE_KEY = "tinday_user_data";
 const CALLS_DISABLED_KEY = "tinday_calls_disabled";
 const INSTA_PROFILE_URL = "https://instagram.com/tindayofficial";
@@ -35,6 +36,9 @@ const TRUSTED_IMAGE_DOMAINS = [
   "emojik.vercel.app",
   "image.pollinations.ai",
 ];
+
+const TRUSTED_AUDIO_DOMAINS = ["audio.jukehost.co.uk"];
+const MAX_AUDIOS_PER_MESSAGE = 1;
 
 const IMAGE_MAX_DIMENSION = 1280;
 const BLOCKED_EXTENSIONS = [
@@ -137,8 +141,11 @@ const declineCallBtn = document.getElementById("declineCallBtn");
 const outgoingCallSound = document.getElementById("outgoing-call-sound");
 const incomingCallSound = document.getElementById("incoming-call-sound");
 
+const AUTOLOGIN_ENABLED_KEY = "tinday_autologin_enabled";
 const CALLS_FEATURE_ENABLED_KEY = "tinday_calls_feature_enabled";
 const INBOX_FEATURE_ENABLED_KEY = "tinday_inbox_feature_enabled";
+const ANTI_SWEAR_KEY = "tinday_anti_swear_enabled";
+const CHAT_TIMEOUT_TIME_KEY = "tinday_chat_timeout_time";
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 const CHUNK_SIZE = 64 * 1024;
 const p2pSpamTracker = new Map();
@@ -192,12 +199,16 @@ const COOLDOWN_DURATION_MS = 3 * 60 * 1000;
 const THROTTLE_INTERVAL_MS = 9 * 1000;
 const userMessageTracker = new Map();
 const SYSTEM_GROUP_MAX_INTERNAL_MESSAGES = 25;
+let MESSAGE_SLOWER_TIMER =
+  Number(localStorage.getItem(CHAT_TIMEOUT_TIME_KEY)) || 0;
 let countdownInterval;
+let birthdayCheckInterval = null;
 let urlToOpen = "";
 let isCallActive = false;
 let inboxRequests = new Map();
 let areCallsEnabled = true;
 let areInboxEnabled = true;
+let isDebugMode = false;
 let incomingFileTransfers = new Map();
 let isMouseOverMessage = false;
 let lastHoveredMessageId = null;
@@ -206,6 +217,9 @@ let reconnectTimer = null;
 let pendingMessages = [];
 let callControlConnection = null;
 let isCleaningUp = false;
+let profanityList = new Set();
+let profanityRegex = null;
+let _lastMessageDisplayPromise = Promise.resolve();
 
 console.log("%cDİKKAT!", "color: red; font-weight: bold; font-size: 45px;");
 console.log(
@@ -227,7 +241,9 @@ function hideModal() {
 
 function showModal({ title, message, checkbox = null, buttons = [] }) {
   modalTitle.textContent = title;
-  modalMessage.innerHTML = message;
+  modalMessage.innerHTML = `
+  <span class="modal-warning-text">${message}</span>
+`;
 
   if (checkbox) {
     modalCheckbox.id = checkbox.id || "modalCheckbox";
@@ -480,10 +496,7 @@ const sendMessageToServer = (payload) => {
     socket.send(JSON.stringify(payload));
   } else if (payload.cmd === "gmsg") {
     pendingMessages.push(payload);
-    displaySystemNotification(
-      "Bağlantı kesildi. Mesajınız bağlantı kurulduğunda gönderilecek.",
-      "info"
-    );
+    displaySystemNotification("Bağlantı koptu, Mesajınız beklemede.", "info");
   } else {
     console.error("Socket is not open.");
   }
@@ -529,7 +542,12 @@ const handleConnect = (event) => {
   }
 
   connectBtn.disabled = true;
-  connectBtn.textContent = "Bağlanılıyor...";
+  if (autoLoginCheck === true) {
+    connectBtn.textContent = "Otomatik bağlanılıyor...";
+  } else {
+    connectBtn.textContent = "Bağlanılıyor...";
+  }
+  delete globalThis.autoLoginCheck;
 
   socket = new WebSocket(CL_SERVER_IP);
   socket.onopen = () => {
@@ -576,10 +594,7 @@ const handleStatusCode = async (packet) => {
       });
     } else if (packet.listener === "link") {
       if (isReconnecting) {
-        displaySystemNotification(
-          "Bağlantı başarıyla yeniden kuruldu.",
-          "info"
-        );
+        displaySystemNotification("Bağlantı yeniden kuruldu.", "info");
         isReconnecting = false;
         reconnectAttempts = 0;
         clearTimeout(reconnectTimer);
@@ -1034,6 +1049,34 @@ const handleSendMessage = async (event) => {
     return;
   }
 
+  const autoLoginRegex = /^t\.(autologin|aulg)$/i;
+  if (autoLoginRegex.test(messageText)) {
+    let isEnabled = localStorage.getItem(AUTOLOGIN_ENABLED_KEY) === "true";
+    isEnabled = !isEnabled;
+    localStorage.setItem(AUTOLOGIN_ENABLED_KEY, isEnabled);
+
+    displaySystemNotification(
+      `Otomatik giriş özelliği şimdi ${isEnabled ? "Açık" : "Kapalı"}.`
+    );
+
+    messageInput.value = "";
+    return;
+  }
+
+  const antiSwearRegex = /^t\.(antiswear|antsr)$/i;
+  if (antiSwearRegex.test(messageText)) {
+    let isEnabled = localStorage.getItem(ANTI_SWEAR_KEY) !== "false";
+    isEnabled = !isEnabled;
+    localStorage.setItem(ANTI_SWEAR_KEY, isEnabled);
+
+    displaySystemNotification(
+      `Küfür Filtresi şimdi ${isEnabled ? "Açık" : "Kapalı"}.`
+    );
+
+    messageInput.value = "";
+    return;
+  }
+
   const callToggleRegex = /^t\.call$/i;
   if (callToggleRegex.test(messageText)) {
     toggleCallsFeature();
@@ -1134,6 +1177,42 @@ const handleSendMessage = async (event) => {
       );
     }
     messageInput.value = "";
+    return;
+  }
+
+  const chatTimeoutRegex = /^t\.(chatslower|cslor)\s+([\s\S]+)$/i;
+  const chatTimeoutTimer = messageText.match(chatTimeoutRegex);
+  if (chatTimeoutTimer) {
+    const rawValue = chatTimeoutTimer[2]?.replace(/\D/g, "") || "0";
+    const reTimer = Math.min(Math.max(Number(rawValue), 0), 20);
+    messageInput.value = "";
+
+    const oldTimer = Number(localStorage.getItem(CHAT_TIMEOUT_TIME_KEY)) || 0;
+
+    if (oldTimer === reTimer) {
+      displaySystemNotification(
+        `Sohbet yavaşlatması ${
+          reTimer === 0 ? "kapatıldı." : `${oldTimer} saniye değiştirilmedi.`
+        }`
+      );
+      return;
+    }
+
+    localStorage.setItem(CHAT_TIMEOUT_TIME_KEY, reTimer);
+    MESSAGE_SLOWER_TIMER = reTimer;
+
+    if (reTimer === 0) {
+      displaySystemNotification(`Sohbet yavaşlatması kapatıldı.`);
+    } else if (oldTimer === 0) {
+      displaySystemNotification(
+        `Sohbet yavaşlatması ${reTimer} saniyeye ayarlandı.`
+      );
+    } else {
+      displaySystemNotification(
+        `Sohbet yavaşlatması ${oldTimer} saniyeden ${reTimer} saniyeye değiştirildi.`
+      );
+    }
+
     return;
   }
 
@@ -1242,18 +1321,31 @@ function formatTime(seconds) {
 
 async function processMessageContent(content) {
   const MAX_IMAGES_PER_MESSAGE = 3;
+  const MAX_AUDIOS_PER_MESSAGE = 3;
   const MAX_LINKS_PER_MESSAGE = 20;
+
   let imageCount = 0;
+  let audioCount = 0;
   let linkCount = 0;
   let gifPreviewed = false;
-  let text = DOMPurify.sanitize(content, { USE_PROFILES: { html: false } });
 
+  let text = DOMPurify.sanitize(content, { USE_PROFILES: { html: false } });
   let imageUrls = [];
+  let audioUrls = [];
+
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   text = text.replace(urlRegex, (url) => {
     try {
       const urlObj = new URL(url);
       const hostname = urlObj.hostname.replace(/^www\./, "");
+      if (
+        TRUSTED_AUDIO_DOMAINS.some((domain) => hostname.includes(domain)) &&
+        audioCount < MAX_AUDIOS_PER_MESSAGE
+      ) {
+        audioUrls.push(url);
+        audioCount++;
+        return "";
+      }
 
       let isGifSource = false;
       let finalImageUrl = url;
@@ -1356,18 +1448,84 @@ async function processMessageContent(content) {
     ALLOWED_TAGS: ["a", "i", "img"],
     ALLOWED_ATTR: ["href", "target", "rel", "class", "src", "alt"],
   });
-
-  return { text: cleanHtml.trim(), images: imageUrls };
+  return { text: cleanHtml.trim(), images: imageUrls, audios: audioUrls };
 }
 
-const displayMessage = async (
+const displayMessage = (data, isSentByMe, isOfficial, isPrivate = false) => {
+  if (!isSentByMe) {
+    if (isOfficial) {
+      notificationVerified.play();
+    }
+  }
+
+  if (MESSAGE_SLOWER_TIMER <= 0 || isSentByMe || isOfficial) {
+    _renderMessageToDOM(data, isSentByMe, isOfficial, isPrivate);
+    return;
+  }
+
+  _lastMessageDisplayPromise = _lastMessageDisplayPromise
+    .then(() => {
+      return new Promise((resolve) =>
+        setTimeout(resolve, MESSAGE_SLOWER_TIMER * 1000)
+      );
+    })
+    .then(() => {
+      return _renderMessageToDOM(data, isSentByMe, isOfficial, isPrivate);
+    });
+};
+
+const _renderMessageToDOM = async (
   data,
   isSentByMe,
   isOfficial,
   isPrivate = false
 ) => {
-  const { text, images } = await processMessageContent(data.content || "");
-  if (!text && images.length === 0 && !data.file && !data.reply) return;
+  const isFilterActive = localStorage.getItem(ANTI_SWEAR_KEY) !== "false";
+  const hasProfanity =
+    isFilterActive && !isSentByMe && containsProfanity(data.content || "");
+
+  if (hasProfanity) {
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add("message", "message-received");
+    messageDiv.id = data.id || "msg-" + Date.now();
+    messageDiv.dataset.senderId = data.sender;
+
+    const senderName = data.sender.split("#")[0];
+    const displayName = truncateText(senderName, 33);
+    const header = document.createElement("strong");
+    header.classList.add("message-header");
+    header.textContent = `${displayName} | ${new Date().toLocaleTimeString(
+      "tr-TR",
+      { hour: "2-digit", minute: "2-digit" }
+    )}`;
+    messageDiv.appendChild(header);
+    const blockerBadgeDiv = document.createElement("div");
+    blockerBadgeDiv.classList.add("official-badge");
+    blockerBadgeDiv.innerHTML = AUTO_BLOCKER_SVG;
+    messageDiv.appendChild(blockerBadgeDiv);
+    const blockedMessageP = document.createElement("p");
+    blockedMessageP.classList.add("message-content", "message-blocked");
+    blockedMessageP.innerHTML =
+      "<i>Bu mesaj küfür içerdiğinden kaldırıldı, 't.antiswear' yazarak Küfür Filtresi'ni açıp/kapatabilirsiniz.</i>";
+    messageDiv.appendChild(blockedMessageP);
+
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    return;
+  }
+
+  const { text, images, audios } = await processMessageContent(
+    data.content || ""
+  );
+  if (
+    !text &&
+    images.length === 0 &&
+    (!audios || audios.length === 0) &&
+    !data.file &&
+    !data.reply
+  )
+    return;
 
   const messageDiv = document.createElement("div");
   messageDiv.classList.add(
@@ -1388,8 +1546,6 @@ const displayMessage = async (
       document.hasFocus()
         ? notificationFocused.play()
         : notificationSound.play();
-    } else {
-      notificationVerified.play();
     }
 
     const senderName = data.sender.split("#")[0];
@@ -1459,6 +1615,12 @@ const displayMessage = async (
     imgContainer.appendChild(img);
     imgContainer.appendChild(starButton);
     messageDiv.appendChild(imgContainer);
+  }
+
+  if (audios && audios.length > 0) {
+    for (const audioUrl of audios) {
+      messageDiv.appendChild(createCustomAudioPlayer(audioUrl));
+    }
   }
 
   if (data.file) {
@@ -1580,6 +1742,11 @@ function displayHelpMessage() {
   const commands = [
     { cmd: "t.help", desc: "Yardım menüsünü gösterir." },
     { cmd: "t.clear", alias: "t.clr", desc: "Sohbet ekranını temizler." },
+    {
+      cmd: "t.autologin",
+      alias: "t.aulg",
+      desc: "Otomatik girişi Açar veya Kapatır.",
+    },
     { cmd: "t.peer2peer", alias: "t.p2p", desc: "P2P'ı Açar veya Kapatır." },
     { cmd: "t.call", alias: " - ", desc: "Aramaları Açar veya Kapatır." },
     {
@@ -1891,8 +2058,8 @@ function showDownloadConfirmation(fileData) {
   };
 
   showModal({
-    title: "Tehlikeli Olabilecek İndirme",
-    message: `<code id="fileToDownload">${safeFileName}</code><br /><br />Bilinmeyen bir kaynaktan gelen bu dosyayı indirmek istediğinizden emin misiniz?`,
+    title: "Dikkat",
+    message: `<code id="fileToDownload">${safeFileName}</code><br /><br />Tehlikeli olabilecek indirme, bu dosyayı indirmek istediğinizden emin misiniz?`,
     buttons: [
       {
         id: modalId,
@@ -1926,6 +2093,8 @@ function checkScreenSize() {
         },
       ],
     });
+  } else {
+    hideModal();
   }
 }
 
@@ -2971,6 +3140,16 @@ function initializeFeatureStates() {
 }
 
 window.addEventListener("load", () => {
+  loadProfanityFilter();
+
+  if (localStorage.getItem(ANTI_SWEAR_KEY) === null) {
+    localStorage.setItem(ANTI_SWEAR_KEY, "true");
+  }
+
+  if (localStorage.getItem(CHAT_TIMEOUT_TIME_KEY) === null) {
+    localStorage.setItem(CHAT_TIMEOUT_TIME_KEY, "0");
+  }
+
   initializeFeatureStates();
   checkScreenSize();
 
@@ -2987,11 +3166,26 @@ window.addEventListener("load", () => {
     );
   }
 
-  if (loadUserData()) {
+  const userData = loadUserData();
+  if (userData) {
     previousUserDiv.style.display = "block";
   }
 
-  checkFormValidity();
+  const isAutoLoginEnabled =
+    localStorage.getItem(AUTOLOGIN_ENABLED_KEY) === "true";
+  globalThis.autoLoginCheck = isAutoLoginEnabled;
+
+  if (isAutoLoginEnabled && userData) {
+    continueWithPreviousLink.style.visibility = "hidden";
+    populateFormWithPreviousData();
+    connectBtn.textContent = "Otomatik bağlanılıyor...";
+    setTimeout(() => {
+      connectBtn.click();
+    }, 200);
+  } else {
+    checkFormValidity();
+  }
+
   displaySystemNotification("Komutlar için 't.help' yazabilirsiniz.");
 });
 
@@ -3011,17 +3205,16 @@ function toggleInboxFeature() {
   );
 }
 
-function createCustomAudioPlayer(data_base64) {
+function createCustomAudioPlayer(audioSrc) {
   const playerContainer = document.createElement("div");
   playerContainer.className = "custom-audio-player";
   const audioElement = document.createElement("audio");
-  audioElement.src = data_base64;
+  audioElement.src = audioSrc;
+  audioElement.preload = "metadata";
   audioElement.style.display = "none";
-
   const playBtn = document.createElement("button");
   playBtn.className = "play-pause-btn";
   playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-
   const progressContainer = document.createElement("div");
   progressContainer.className = "audio-progress-container";
   const slider = document.createElement("input");
@@ -3029,14 +3222,21 @@ function createCustomAudioPlayer(data_base64) {
   slider.className = "seek-slider";
   slider.value = 0;
   slider.max = 100;
-
   const timeInfo = document.createElement("div");
   timeInfo.className = "audio-time-info";
   const currentTimeEl = document.createElement("span");
   currentTimeEl.textContent = "0:00";
   const durationEl = document.createElement("span");
   durationEl.textContent = "0:00";
-  timeInfo.append(currentTimeEl, durationEl);
+
+  if (typeof audioSrc === "string" && audioSrc.includes("jukehost.co.uk")) {
+    const sourceInfo = document.createElement("div");
+    sourceInfo.className = "audio-jukehost-lg";
+    sourceInfo.innerText = "jukehost.co.uk";
+    timeInfo.append(currentTimeEl, sourceInfo, durationEl);
+  } else {
+    timeInfo.append(currentTimeEl, durationEl);
+  }
 
   progressContainer.append(slider, timeInfo);
   playerContainer.append(playBtn, progressContainer, audioElement);
@@ -3050,24 +3250,30 @@ function createCustomAudioPlayer(data_base64) {
       playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
     }
   });
+
   audioElement.addEventListener("loadedmetadata", () => {
     durationEl.textContent = formatTime(audioElement.duration);
     slider.max = audioElement.duration;
   });
+
   audioElement.addEventListener("timeupdate", () => {
     currentTimeEl.textContent = formatTime(audioElement.currentTime);
-    slider.value = audioElement.currentTime;
-    slider.style.setProperty(
-      "--seek-before-width",
-      `${(slider.value / slider.max) * 100}%`
-    );
+    if (!isNaN(audioElement.duration)) {
+      slider.value = audioElement.currentTime;
+      slider.style.setProperty(
+        "--seek-before-width",
+        `${(slider.value / slider.max) * 100}%`
+      );
+    }
   });
+
   audioElement.addEventListener("ended", () => {
     playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
     slider.value = 0;
     currentTimeEl.textContent = "0:00";
     slider.style.setProperty("--seek-before-width", "0%");
   });
+
   slider.addEventListener("input", () => {
     audioElement.currentTime = slider.value;
   });
@@ -3233,19 +3439,35 @@ async function initializeBirthdayCelebration(userBirthdate, roomName) {
   cleanOldBirthdayCelebrations();
 
   if (birthdayCelebrationTimeout) clearTimeout(birthdayCelebrationTimeout);
+  if (birthdayCheckInterval) clearInterval(birthdayCheckInterval);
+
   isBirthdayToday = false;
   let now_utc = new Date();
   const birthDateObj = new Date(userBirthdate);
   const birthMonth = birthDateObj.getUTCMonth();
   const birthDay = birthDateObj.getUTCDate();
+
   const birthdayStartThisYear_utc = new Date(
     Date.UTC(now_utc.getUTCFullYear(), birthMonth, birthDay)
   );
   const birthdayEndThisYear_utc = new Date(
     birthdayStartThisYear_utc.getTime() + 24 * 60 * 60 * 1000
   );
+
   isBirthdayToday =
     now_utc >= birthdayStartThisYear_utc && now_utc < birthdayEndThisYear_utc;
+
+  let targetBirthdayStart_utc;
+  if (now_utc < birthdayStartThisYear_utc) {
+    targetBirthdayStart_utc = birthdayStartThisYear_utc;
+  } else {
+    const nextYear = now_utc.getUTCFullYear() + 1;
+    targetBirthdayStart_utc = new Date(
+      Date.UTC(nextYear, birthMonth, birthDay)
+    );
+  }
+
+  const timeUntilTarget = targetBirthdayStart_utc.getTime() - now_utc.getTime();
 
   let birthdayThisYear_utc = new Date(
     Date.UTC(now_utc.getUTCFullYear(), birthMonth, birthDay)
@@ -3262,25 +3484,56 @@ async function initializeBirthdayCelebration(userBirthdate, roomName) {
     triggerSameDayCelebration(roomName);
   } else if (wasBirthdayRecently) {
     triggerOneDayLateCelebration(roomName);
+  } else if (timeUntilTarget > 0 && timeUntilTarget <= 24 * 60 * 60 * 1000) {
+    scheduleBirthdayCountdown(targetBirthdayStart_utc);
   }
+}
 
-  let targetBirthdayStart_utc;
-  if (now_utc < birthdayStartThisYear_utc) {
-    targetBirthdayStart_utc = birthdayStartThisYear_utc;
-  } else {
-    const nextYear = now_utc.getUTCFullYear() + 1;
-    targetBirthdayStart_utc = new Date(
-      Date.UTC(nextYear, birthMonth, birthDay)
-    );
-  }
-  const timeUntilTarget = targetBirthdayStart_utc.getTime() - now_utc.getTime();
+function scheduleBirthdayCountdown(targetBirthdayDate) {
+  if (birthdayCheckInterval) clearInterval(birthdayCheckInterval);
 
-  if (timeUntilTarget > 0 && timeUntilTarget <= 30000) {
-    birthdayCelebrationTimeout = setTimeout(
-      startBirthdayCountdown,
-      timeUntilTarget
-    );
-  }
+  birthdayCheckInterval = setInterval(() => {
+    const now = new Date();
+    const remainingMs = targetBirthdayDate.getTime() - now.getTime();
+
+    if (remainingMs <= 30000 && remainingMs > 0) {
+      clearInterval(birthdayCheckInterval);
+      startDynamicBirthdayCountdown(remainingMs);
+    } else if (remainingMs <= 0) {
+      clearInterval(birthdayCheckInterval);
+    }
+  }, 1000);
+}
+
+function startDynamicBirthdayCountdown(remainingMs) {
+  let messageSystemSenderName = "TinDay Official Team";
+  let messageSystemInfo = "Bu mesaj size ve doğum günü ikizlerinize özel...";
+  displaySpecialSystemMessage(
+    "Doğum gününüze çok az kaldı, tüm doğum günü ikizlerinizle kutlamaya hazır mısınız? Geri sayım başlıyor!",
+    messageSystemSenderName,
+    messageSystemInfo
+  );
+
+  messageInput.placeholder = "Doğum günü kutlaması başlıyor...";
+
+  const visualCountdownMs = Math.min(remainingMs, 5000);
+  const initialDelayMs = remainingMs - visualCountdownMs;
+
+  setTimeout(() => {
+    birthdayCountdownOverlay.classList.add("visible");
+    let count = Math.ceil(visualCountdownMs / 1000);
+    countdownNumberEl.textContent = count;
+
+    const visualInterval = setInterval(() => {
+      count--;
+      if (count > 0) {
+        countdownNumberEl.textContent = count;
+      } else {
+        clearInterval(visualInterval);
+        triggerBirthdayCelebration();
+      }
+    }, 1000);
+  }, initialDelayMs);
 }
 
 function triggerSameDayCelebration(roomName) {
@@ -3367,7 +3620,6 @@ function startBirthdayCountdown() {
       countdownNumberEl.textContent = count;
 
       const interval = setInterval(() => {
-        messageInput.disabled = true;
         messageInput.placeholder = "Doğum günü kutlaması başlıyor...";
         count--;
         if (count > 0) {
@@ -3383,7 +3635,6 @@ function startBirthdayCountdown() {
 
 function triggerBirthdayCelebration() {
   birthdayCountdownOverlay.classList.remove("visible");
-  messageInput.disabled = false;
   messageInput.placeholder = "Bir mesaj yaz... (Komutlar için t.help)";
 
   isBirthdayToday = true;
@@ -3396,7 +3647,7 @@ function triggerBirthdayCelebration() {
       Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
     ];
   const celebrationMessage = {
-    sender: "Sistem",
+    sender: "Official TinDay Team",
     content: `🎂 Doğum günün kutlu olsun ${myUsername}! Nice mutlu senelere! 🥳 ${randomGif}`,
     timestamp: new Date().toISOString(),
     id: "msg-birthday-" + Date.now(),
@@ -3508,6 +3759,7 @@ function processPendingMessages() {
     "info"
   );
 
+  let sentCount = 0;
   const interval = setInterval(() => {
     if (pendingMessages.length === 0) {
       clearInterval(interval);
@@ -3516,6 +3768,8 @@ function processPendingMessages() {
     const messagePayload = pendingMessages.shift();
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(messagePayload));
+      sentCount++;
+      displaySystemNotification(`Mesaj ${sentCount} gönderildi...`);
     } else {
       pendingMessages.unshift(messagePayload);
       clearInterval(interval);
@@ -3533,7 +3787,7 @@ function handleSocketClose() {
   clearTimeout(reconnectTimer);
 
   displaySystemNotification(
-    "Bağlantı kesildi. Yeniden bağlanmaya çalışılıyor...",
+    "Bağlantı koptu, Yeniden bağlanmaya çalışılıyor...",
     "info"
   );
 
@@ -3559,7 +3813,7 @@ function scheduleReconnect() {
 function doReconnectAttempt() {
   if (reconnectAttempts >= maxReconnectAttempts) {
     displaySystemNotification(
-      "Bağlantı kurulamadı. Lütfen sayfayı yenileyiniz.",
+      "Bağlantı kurulamadı, Lütfen sayfayı yenileyiniz.",
       "error"
     );
     isReconnecting = false;
@@ -3601,4 +3855,41 @@ function updateSystemGroupUI(groupElement) {
   if (isGrouped) {
     counterEl.textContent = `${groupData.currentIndex + 1}/${messageCount}`;
   }
+}
+
+async function loadProfanityFilter() {
+  try {
+    const response = await fetch(
+      `https://tinday.app.tc/filter/profanityFilter/profanity.txt`
+    );
+    if (!response.ok) {
+      return;
+    }
+    const text = await response.text();
+
+    const escapeRegExp = (string) => {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    };
+    const words = text
+      .split("\n")
+      .map((word) => word.trim())
+      .filter((word) => word.length > 1);
+
+    if (words.length === 0) {
+      console.warn("Küfür filtresi dosyası okunamadı.");
+      return;
+    }
+
+    const pattern = words.map(escapeRegExp).join("|");
+    profanityRegex = new RegExp(`\\b(${pattern})\\b`, "i");
+  } catch (error) {
+    console.error("Swear Filter Error");
+  }
+}
+
+function containsProfanity(text) {
+  if (!profanityRegex || !text) {
+    return false;
+  }
+  return profanityRegex.test(text);
 }
