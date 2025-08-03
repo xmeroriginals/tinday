@@ -1,14 +1,20 @@
-# TinDay License v2.0
-### Copyright (c) 2025 TinDay Team | Xmer™ XmerOriginals™
----
+# TinDay Source-Available Ethical License v2.1
+Copyright (c) 2025 TinDay Collective | XmerOriginals™
+TinDay is a project developed and maintained by Xmer and contributors.
 
+This document serves both as a legal license and a binding technical-ethical specification for the use and modification of TinDay.
+Any use, modification, or redistribution is expected to adhere to these foundational structures.
+
+Any damage or security breaches resulting from user or third-party modifications, especially those removing or weakening security protections, shall be solely the responsibility of the modifier. The TinDay project and its developers expressly disclaim all liability for any problems, damages, or losses arising from such modifications.
+
+---
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to use, copy, modify, merge, publish, and distribute the Software, including commercial and non-commercial purposes, under the following conditions:
 
 **1. Attribution Requirement** | 
 All public uses or distributions of the Software or derivative works must include clear attribution to “TinDay” as the original creator. A visible mention (website footer, about page) is required.
 
 **2. Ethical Use Clause** | 
-This software may not be used for purposes that infringe upon the rights or safety of others, including (but not limited to) surveillance, profiling, harassment, or any form of illegal or malicious activity. Use of this software to create, spread, or organize violence or harm — including coordinated attacks, hate speech, or child exploitation — is strictly prohibited.
+This software may not be used for purposes that infringe upon the rights or safety of others, including (but not limited to) surveillance, profiling, harassment, or any form of illegal or malicious activity. Use of this software to create, spread, or organize violence or harm — including coordinated attacks, hate speech, or child exploitation — is strictly prohibited. Violations are considered outside the scope of TinDay and its support, developers cannot be held responsible.
 
 **3. Data Privacy Guarantee** | 
 The original version of the TinDay platform does not collect or store any personal user data. If reused or extended, modified versions are encouraged to maintain privacy-preserving structures and must disclose any data collection clearly in their documentation.
@@ -45,9 +51,19 @@ _Basics_
 - Do not remove warning messages that will prevent users from being manipulated by attackers. If you do remove them, support them with your own official warning messages. (Never leave official messages; always inform your users with official messages.)
 - Overly large messages, videos, images, and audio are discarded by the WebSocket server, and the sender's connection is terminated. If you use a server other than TinDay's WSS server, make sure it has these features.
 - Do not increase spam protections. Since it is anonymous chat, the attacker can easily re-join and continue the attack by refreshing the page once. Therefore, do not increase spam protections but you can reduce them.
+- Not Removing Profanity Filters, Profanity Filters can be added to but cannot be removed. The Profanity Filter setting cannot be made mandatory but should be set to on by default for user security.
 
 Removing or weakening these measures intentionally is strongly discouraged, as it compromises user safety and anonymity — foundational principles of this project.
-Any fork failing to uphold these protections may not claim TinDay compatibility or identity, and must remove TinDay branding where applicable.
+Equivalent or superior alternative implementations of core protections are permitted, as long as they meet the intended ethical and security goals outlined above.
+
+**Examples of Prohibited Uses Include** |
+- Using TinDay’s name/logo to promote a platform that collects user data.
+- Selling access to a TinDay-branded derivative.
+- Implying official affiliation with TinDay while modifying core ethical rules.
+
+** Approved Derivative Works Must _Not Use the TinDay Name/Logo_ Unless** |
+- They clearly state they are unofficial forks.
+- They comply fully with TinDay's ethical and technical license clauses.
 
 # Future Contributions
-_Any contributions or forks of the project that wish to stay aligned with TinDay's values (privacy-first, ad-free, data-neutral) are welcome and encouraged to be submitted as pull requests to the official repository._
+_We welcome contributions that reinforce the core values of security, privacy, and decentralized anonymity, while preserving the ethical integrity of TinDay._
