@@ -1186,7 +1186,7 @@ const handleSendMessage = async (event) => {
   const chatTimeoutTimer = messageText.match(chatTimeoutRegex);
   if (chatTimeoutTimer) {
     const rawValue = chatTimeoutTimer[2]?.replace(/\D/g, "") || "0";
-    const reTimer = Math.min(Math.max(Number(rawValue), 0), 20);
+    const reTimer = Math.min(Math.max(Number(rawValue), 0), 5);
     messageInput.value = "";
 
     const oldTimer = Number(localStorage.getItem(CHAT_TIMEOUT_TIME_KEY)) || 0;
@@ -1766,7 +1766,7 @@ function displayHelpMessage() {
     {
       cmd: "t.chatslower",
       alias: "t.cslor",
-      desc: "Gelen mesajları yavaşlatır, 0-20s arasında değer girilebilir. Örneğin 't.chatslower 5'",
+      desc: "Gelen mesajları yavaşlatır, 0-5s arasında değer girilebilir. Örneğin 't.chatslower 5'",
     },
     {
       cmd: "t.inbox",
