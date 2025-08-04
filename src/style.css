@@ -927,30 +927,22 @@ a.social-link i {
 #context-menu {
   position: absolute;
   display: none;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
   background: var(--card);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
   z-index: 9999;
   padding: 9px;
   border-radius: var(--border-radius);
-  animation: fadeInScale 150ms ease-out;
-  transform-origin: top left;
   font-size: 1.1rem;
-  text-align: center;
-  justify-content: center;
-  justify-items: center;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
-  flex-direction: column;
-  gap: 9px;
-  z-index: 13;
+  gap: 3px;
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
   border: 1px solid var(--border);
-  max-width: 300px;
-  max-height: 400px;
-  overflow: auto;
-  white-space: nowrap;
+  overflow: visible;
   box-sizing: border-box;
-  overflow-wrap: break-word;
+  visibility: hidden;
 }
 
 #context-menu button {
