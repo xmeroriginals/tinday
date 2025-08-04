@@ -2160,23 +2160,36 @@ function showMenuAt(x, y) {
     sendGiftButton.style.display = isBirthdayToday ? "block" : "none";
   }
   const offset = 10;
+  menu.style.display = "flex";
+  menu.style.flexDirection = "row";
   menu.style.visibility = "hidden";
-  menu.style.display = "block";
   requestAnimationFrame(() => {
+    const buttons = Array.from(menu.querySelectorAll("button"));
+    const totalButtonWidth = buttons.reduce(
+      (sum, btn) => sum + btn.offsetWidth,
+      0
+    );
+    const totalGaps = (buttons.length - 1) * 3;
+    const estimatedMenuWidth = totalButtonWidth + totalGaps;
+    const viewportWidth = window.innerWidth;
+    if (x + offset + estimatedMenuWidth > viewportWidth) {
+      menu.style.flexDirection = "column";
+    } else {
+      menu.style.flexDirection = "row";
+    }
     const menuWidth = menu.offsetWidth;
     const menuHeight = menu.offsetHeight;
-    const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     let posX = x + offset;
-    let posY = y - offset;
+    let posY = y + offset;
     if (posX + menuWidth > viewportWidth) {
       posX = x - menuWidth - offset;
     }
     if (posY + menuHeight > viewportHeight) {
       posY = y - menuHeight - offset;
     }
-    posX = Math.max(0, posX);
-    posY = Math.max(0, posY);
+    posX = Math.max(0, Math.min(posX, viewportWidth - menuWidth));
+    posY = Math.max(0, Math.min(posY, viewportHeight - menuHeight));
     menu.style.left = `${posX}px`;
     menu.style.top = `${posY}px`;
     menu.style.visibility = "visible";
@@ -2765,6 +2778,7 @@ document.addEventListener("click", (e) => {
   }
 
   const menu = document.getElementById("context-menu");
+  const menuVisible = getComputedStyle(menu).display !== "none";
   const targetMessage = e.target.closest(".message-received");
 
   if (e.shiftKey && targetMessage) {
@@ -2798,12 +2812,9 @@ document.addEventListener("click", (e) => {
     }
   }
 
-  if (
-    menu.style.display === "block" &&
-    !e.target.closest("#context-menu") &&
-    !menuJustOpened
-  ) {
+  if (menuVisible && !e.target.closest("#context-menu") && !menuJustOpened) {
     menu.style.display = "none";
+    menu.style.visibility = "hidden";
     targetUserIdForCall = null;
     contextMenuTargetMessageId = null;
   }
