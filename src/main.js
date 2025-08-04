@@ -19,6 +19,8 @@ const TRUSTED_SOCIAL_DOMAINS = {
   "twitter.com": { name: "Twitter", icon: "fa-brands fa-twitter" },
   "x.com": { name: "X", icon: "fa-brands fa-x-twitter" },
   "reddit.com": { name: "Reddit", icon: "fa-brands fa-reddit-alien" },
+  "discord.com": { name: "Discord", icon: "fa-brands fa-discord" },
+  "discord.gg": { name: "Discord", icon: "fa-brands fa-discord" },
 };
 
 const TRUSTED_IMAGE_DOMAINS = [
@@ -166,6 +168,7 @@ let originalBirthdayRoomName = "";
 let initialCustomRoomName = null;
 
 let socket = null;
+let discordCommunity = null;
 let myName = "";
 let myPeerId = "";
 let roomName = "";
@@ -241,9 +244,8 @@ function hideModal() {
 
 function showModal({ title, message, checkbox = null, buttons = [] }) {
   modalTitle.textContent = title;
-  modalMessage.innerHTML = `
-  <span class="modal-warning-text">${message}</span>
-`;
+  const cleanMessage = DOMPurify.sanitize(message);
+  modalMessage.innerHTML = `<span class="modal-warning-text">${cleanMessage}</span>`;
 
   if (checkbox) {
     modalCheckbox.id = checkbox.id || "modalCheckbox";
@@ -1328,10 +1330,9 @@ async function processMessageContent(content) {
   let audioCount = 0;
   let linkCount = 0;
   let gifPreviewed = false;
-
-  let text = DOMPurify.sanitize(content, { USE_PROFILES: { html: false } });
   let imageUrls = [];
   let audioUrls = [];
+  let text = DOMPurify.sanitize(content, { USE_PROFILES: { html: false } });
 
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   text = text.replace(urlRegex, (url) => {
@@ -1444,6 +1445,13 @@ async function processMessageContent(content) {
     return `<a href="https://buymeacoffee.com/xmer" target="_blank" rel="noopener noreferrer" class="social-link"><i class="fa-solid fa-mug-hot"></i> Buy me a Coffee</a>`;
   });
 
+  const discordMacro = /\[DC\]/gi;
+  text = text.replace(discordMacro, (match) => {
+    if (linkCount >= MAX_LINKS_PER_MESSAGE) return match;
+    linkCount++;
+    return `<a href="${discordCommunity}" target="_blank" rel="noopener noreferrer" class="social-link"><i class="fa-brands fa-discord"></i> Discord</a>`;
+  });
+
   const cleanHtml = DOMPurify.sanitize(text, {
     ALLOWED_TAGS: ["a", "i", "img"],
     ALLOWED_ATTR: ["href", "target", "rel", "class", "src", "alt"],
@@ -1554,7 +1562,11 @@ const _renderMessageToDOM = async (
     header.classList.add("message-header");
 
     if (isPrivate) {
-      header.innerHTML = `${displayName} | <span class="subtle-note">Bu mesajı sadece siz görebilirsiniz.</span>`;
+      header.textContent = `${displayName} | `;
+      const subtleNote = document.createElement("span");
+      subtleNote.className = "subtle-note";
+      subtleNote.textContent = "Bu mesajı sadece siz görebilirsiniz.";
+      header.appendChild(subtleNote);
     } else {
       header.textContent = `${displayName} | ${new Date().toLocaleTimeString(
         "tr-TR",
@@ -1579,10 +1591,12 @@ const _renderMessageToDOM = async (
     const sanitizedSenderName = DOMPurify.sanitize(data.reply.originalSender, {
       USE_PROFILES: { html: false },
     });
-    replySender.innerHTML = `<i class="fa-solid fa-reply"></i> ${truncateText(
-      sanitizedSenderName,
-      33
-    )}`;
+    const icon = document.createElement("i");
+    icon.className = "fa-solid fa-reply";
+    replySender.appendChild(icon);
+    replySender.appendChild(
+      document.createTextNode(` ${truncateText(sanitizedSenderName, 33)}`)
+    );
     const replyContent = document.createElement("div");
     replyContent.className = "message-reply-content";
     replyContent.textContent = truncateText(data.reply.originalContent, 100);
@@ -1749,6 +1763,11 @@ function displayHelpMessage() {
     },
     { cmd: "t.peer2peer", alias: "t.p2p", desc: "P2P'ı Açar veya Kapatır." },
     { cmd: "t.call", alias: " - ", desc: "Aramaları Açar veya Kapatır." },
+    {
+      cmd: "t.chatslower",
+      alias: "t.cslor",
+      desc: "Gelen mesajları yavaşlatır, 0-20s arasında değer girilebilir. Örneğin 't.chatslower 5'",
+    },
     {
       cmd: "t.inbox",
       alias: "t.ibx",
@@ -2076,6 +2095,10 @@ function showDownloadConfirmation(fileData) {
 }
 
 function checkScreenSize() {
+  if (menuJustOpened) {
+    const menu = document.getElementById("context-menu");
+    menu.style.display = "none";
+  }
   if (window.innerWidth < 350 || window.innerHeight < 330) {
     showModal({
       title: "Uyarı",
@@ -2134,15 +2157,33 @@ function showMenuAt(x, y) {
   const menu = document.getElementById("context-menu");
   const sendGiftButton = document.getElementById("sendGiftUser");
   if (sendGiftButton) {
-    sendGiftButton.style.display = isBirthdayToday ? "visible" : "none";
+    sendGiftButton.style.display = isBirthdayToday ? "block" : "none";
   }
   const offset = 10;
-  menu.style.left = `${x + offset}px`;
-  menu.style.top = `${y - offset}px`;
+  menu.style.visibility = "hidden";
   menu.style.display = "block";
-  menu.style.animation = "none";
-  void menu.offsetWidth;
-  menu.style.animation = "fadeInScale 150ms ease-out";
+  requestAnimationFrame(() => {
+    const menuWidth = menu.offsetWidth;
+    const menuHeight = menu.offsetHeight;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    let posX = x + offset;
+    let posY = y - offset;
+    if (posX + menuWidth > viewportWidth) {
+      posX = x - menuWidth - offset;
+    }
+    if (posY + menuHeight > viewportHeight) {
+      posY = y - menuHeight - offset;
+    }
+    posX = Math.max(0, posX);
+    posY = Math.max(0, posY);
+    menu.style.left = `${posX}px`;
+    menu.style.top = `${posY}px`;
+    menu.style.visibility = "visible";
+    menu.style.animation = "none";
+    void menu.offsetWidth;
+    menu.style.animation = "fadeInScale 150ms ease-out";
+  });
 }
 
 async function stopAllSoundsWithFade() {
@@ -2291,13 +2332,13 @@ async function handleIncomingData(data, senderPeerId) {
       }
 
       const sanitizedTextData = sanitizeMessageObject(data);
+      sanitizedTextData.senderId = senderPeerId;
       inboxRequests.set(sanitizedTextData.transferId, sanitizedTextData);
       updateInboxUI(true);
       if (inboxPanel.classList.contains("active")) {
         renderInboxPanel();
       }
       break;
-
     case "file-transfer-start":
       const MAX_CHUNKS = Math.ceil(MAX_FILE_SIZE_BYTES / CHUNK_SIZE) + 5;
       if (
@@ -2316,7 +2357,7 @@ async function handleIncomingData(data, senderPeerId) {
         fileInfo: sanitizedFileData.fileInfo,
         chunks: new Array(sanitizedFileData.fileInfo.totalChunks),
         receivedChunks: 0,
-        senderId: sanitizedFileData.senderId,
+        senderId: senderPeerId,
       });
       break;
 
@@ -3005,7 +3046,6 @@ function renderInboxPanel() {
   inboxContent.innerHTML = "";
   inboxPanel.style.display = "";
   inboxPanel.style.justifyContent = "";
-
   if (inboxRequests.size === 0) {
     inboxContent.innerHTML = `
             <div class="favorites-empty-state">
@@ -3018,11 +3058,18 @@ function renderInboxPanel() {
   } else {
     const list = document.createElement("div");
     list.className = "inbox-list";
-
     inboxRequests.forEach((req, id) => {
       const itemDiv = document.createElement("div");
       itemDiv.className = "inbox-item";
-      const senderName = DOMPurify.sanitize(req.senderId.split("#")[0]);
+      const rawSenderId = req.senderId;
+      let senderDisplayName;
+      const parts = rawSenderId.split("-");
+      if (parts.length > 1) {
+        senderDisplayName = parts.slice(0, -1).join("-");
+      } else {
+        senderDisplayName = rawSenderId;
+      }
+      const senderName = DOMPurify.sanitize(senderDisplayName);
 
       let requestInfoHTML = "";
 
@@ -3152,6 +3199,7 @@ window.addEventListener("load", () => {
 
   initializeFeatureStates();
   checkScreenSize();
+  getDiscordLink();
 
   const urlParams = new URLSearchParams(window.location.search);
   initialCustomRoomName = urlParams.get("room");
@@ -3203,6 +3251,17 @@ function toggleInboxFeature() {
   displaySystemNotification(
     `Gelen Kutusu şimdi ${areInboxEnabled ? "Açık" : "Kapalı"}.`
   );
+}
+
+async function getDiscordLink() {
+  const dcCommunity = await fetch(
+    `https://tinday.app.tc/news/dc-community.txt`,
+    { cache: "no-store" }
+  );
+  if (!dcCommunity.ok) {
+    return;
+  }
+  discordCommunity = (await dcCommunity.text()).trim();
 }
 
 function createCustomAudioPlayer(audioSrc) {
@@ -3640,7 +3699,7 @@ function triggerBirthdayCelebration() {
     ];
   const celebrationMessage = {
     sender: "Official TinDay Team",
-    content: `🎂 Doğum günün kutlu olsun ${myUsername}! Nice mutlu senelere! 🥳 ${randomGif}`,
+    content: `🎂 Doğum gününüz kutlu olsun ${myUsername}! Nice mutlu senelere!🥳 ${randomGif}`,
     timestamp: new Date().toISOString(),
     id: "msg-birthday-" + Date.now(),
   };
