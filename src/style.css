@@ -927,12 +927,10 @@ a.social-link i {
 #context-menu {
   position: absolute;
   display: none;
-  background: white;
   background: var(--card);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 9999;
-  padding: 13px 13px;
-  border: 1px solid var(--border);
+  padding: 9px;
   border-radius: var(--border-radius);
   animation: fadeInScale 150ms ease-out;
   transform-origin: top left;
@@ -940,15 +938,36 @@ a.social-link i {
   text-align: center;
   justify-content: center;
   justify-items: center;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  flex-direction: column;
+  gap: 9px;
+  z-index: 13;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  border: 1px solid var(--border);
+  max-width: 300px;
+  max-height: 400px;
+  overflow: auto;
+  white-space: nowrap;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
 }
 
 #context-menu button {
   background: none;
   border: none;
-  padding: 0;
   font: inherit;
   color: inherit;
-  margin: 7px;
+  margin-left: 3.5px;
+  margin-right: 3.5px;
+  background: var(--accent);
+  color: var(--text-dark);
+  border: none;
+  border-radius: 10px;
+  padding: 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
 }
 
 @keyframes fadeInScale {
