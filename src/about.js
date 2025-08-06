@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       container.style.gap = "4px";
 
       const textElement = document.createElement("span");
-      textElement.textContent = "Resmi Ekip";
+      textElement.textContent = "Ekip";
       textElement.className = "verified-text";
 
       const badgeElement = document.createElement("div");
