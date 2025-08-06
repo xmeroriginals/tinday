@@ -81,10 +81,6 @@ header {
   margin: 6px auto;
 }
 
-header i {
-  font-size: 1.1rem;
-}
-
 header img {
   width: 36px;
   height: 36px;
@@ -95,7 +91,8 @@ header img {
   color: var(--text-dark);
 }
 
-.header-action-button {
+.header-action-button,
+.header-action-button-backtinday {
   position: absolute;
   right: 0.9rem;
   background-color: var(--primary);
@@ -106,7 +103,6 @@ header img {
   cursor: pointer;
   transition: background-color 0.2s ease;
   box-shadow: var(--shadow);
-  font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,7 +110,12 @@ header img {
   height: 36px;
   text-decoration: none;
 }
-
+.header-action-button {
+  font-size: 1.25rem;
+}
+.header-action-button-backtinday {
+  font-size: 1.1rem;
+}
 .header-action-button:hover {
   background-color: var(--primary-dark);
 }
