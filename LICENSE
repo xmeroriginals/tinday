@@ -1,17 +1,17 @@
-TinDay License v2.1 (Summary)
+TinDay License v2.1 (Summary)  
 Copyright (c) 2025 TinDay Collective | XmerOriginals™
 TinDay is a project developed and maintained by Xmer and contributors.
 
-Permission is granted to use, copy, modify, merge, publish, and distribute this software for commercial or non-commercial purposes under the following conditions:
+Permission is granted to use, copy, modify, merge, publish, and distribute this software, for commercial or non-commercial purposes, under the following conditions:
 
-1. Attribution is required in any public use or distribution. You must visibly credit “TinDay”.
-2. The software may not be used for illegal, harmful, or unethical activities (e.g. surveillance, harassment, violence).
-3. No personal user data is collected in the original software. Modifications must clearly disclose any data collection.
-4. The software is provided “as is” with no warranty. All risks and misuse are the user's responsibility.
-5. The TinDay name and branding must not be used to imply official support without permission.
-6. TinDay does not store any logs, messages, or metadata; we cannot comply with data disclosure requests.
-7. All forks or redistributions must retain essential client-side security measures (see full license for details).
+1. Attribution – Public use or distribution must visibly credit “TinDay” as the original creator (e.g. in a footer or about page).  
+2. Ethical Use Only – This software may not be used for surveillance, profiling, harassment, illegal activity, or any form of violence or harm.  
+3. Data Privacy – The original version collects no personal data. Derivatives must disclose any data collection clearly.  
+4. Security Measures – Forks must preserve or strengthen client-side protections. Weakening these is strongly discouraged.  
+5. No Liability – This software is provided “as is” without warranty. Use is at your own risk.  
+6. Non-Affiliation – Do not use the TinDay name, logo, or branding without permission — unless clearly marked as an unofficial fork.  
+7. No Server Logs – TinDay is designed not to retain any chat logs, metadata, or user-identifiable data. Such data does not exist and cannot be provided.
 
-Removing core protections or violating these terms voids TinDay identity usage rights.
+Removing core protections or violating these terms voids your right to use the TinDay name or identity.
 
-See full license for details | LICENSE.md
+See full license for complete details | "LICENSE.md"
