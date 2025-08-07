@@ -2209,6 +2209,7 @@ sik
 sike
 siker sikmez
 siki
+sikik
 sikilir sikilmez
 sikin
 sikler
