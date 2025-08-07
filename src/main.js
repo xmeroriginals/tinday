@@ -1,6 +1,8 @@
 const CL_SERVER_IP = "wss://cl.mikedev101.cc/";
 const OFFICIAL_BADGE_SVG = document.getElementById("official-badge").innerHTML;
 const AUTO_BLOCKER_SVG = document.getElementById("autoblocker-badge").innerHTML;
+const POWERED_BY_TENOR_SVG =
+  document.getElementById("powered-by-tenor").innerHTML;
 const LOCAL_STORAGE_KEY = "tinday_user_data";
 const CALLS_DISABLED_KEY = "tinday_calls_disabled";
 const INSTA_PROFILE_URL = "https://instagram.com/tindayofficial";
@@ -41,7 +43,6 @@ const TRUSTED_IMAGE_DOMAINS = [
 
 const TRUSTED_AUDIO_DOMAINS = ["audio.jukehost.co.uk"];
 const MAX_AUDIOS_PER_MESSAGE = 1;
-
 const IMAGE_MAX_DIMENSION = 1280;
 const BLOCKED_EXTENSIONS = [
   ".exe",
@@ -74,29 +75,23 @@ const previousUserDiv = document.getElementById("previousUser");
 const continueWithPreviousLink = document.getElementById(
   "continueWithPrevious"
 );
-
 const messagesContainer = document.getElementById("messages");
 const messageForm = document.getElementById("message-form");
 const messageInput = document.getElementById("message-input");
 const chatRoomNameHeader = document.getElementById("header-title");
-
 const replyPreviewArea = document.getElementById("reply-preview-area");
 const replyPreviewContent = document.getElementById("reply-preview-content");
 const cancelReplyBtn = document.getElementById("cancel-reply-btn");
-
 const addButton = document.getElementById("add-button");
 const actionsPopup = document.getElementById("actions-popup");
 const uploadFileBtn = document.getElementById("upload-file-btn");
 const openFavoritesBtn = document.getElementById("open-favorites-btn");
 const fileInput = document.getElementById("file-input");
-
 const favoritesPanel = document.getElementById("favoritesPanel");
 const favoritesContent = document.getElementById("favoritesContent");
-
 const inboxButton = document.getElementById("inbox-button");
 const inboxPanel = document.getElementById("inbox-panel");
 const inboxContent = document.getElementById("inbox-content");
-
 const dynamicModal = document.getElementById("dynamicModal");
 const modalTitle = document.getElementById("modalTitle");
 const modalMessage = document.getElementById("modalMessage");
@@ -106,16 +101,30 @@ const modalCheckboxContainer = document.getElementById(
 const modalCheckbox = document.getElementById("modalCheckbox");
 const modalCheckboxLabel = document.getElementById("modalCheckboxLabel");
 const modalButtons = document.getElementById("modalButtons");
-
 const themeColorMeta = document.getElementById("themeColorMeta");
-
 const birthdayCountdownOverlay = document.getElementById(
   "birthdayCountdownOverlay"
 );
 const countdownNumberEl = document.getElementById("countdown-number");
-
+const imagePreviewOverlay = document.getElementById("image-preview-overlay");
+const imagePreviewContent = document.getElementById("image-preview-content");
+const imagePreviewClose = document.getElementById("image-preview-close");
+const imagePreviewContainer = document.getElementById("image-preview-overlay");
+const imagePreviewImage = document.getElementById("image-preview-content");
+const openGifBtn = document.getElementById("open-gif-btn");
+const gifPanel = document.getElementById("gifPanel");
+const gifContent = document.getElementById("gifContent");
+const gifSearchInput = document.getElementById("gifSearchInput");
 const CALLS_ENABLED_KEY = "callsEnabled";
-
+const callUserBtn = document.getElementById("callUser");
+const remoteAudioContainer = document.getElementById("remote-audio-container");
+const callPanel = document.getElementById("call-panel");
+const callerNameDiv = document.getElementById("caller-name");
+const callTimerDiv = document.getElementById("call-timer");
+const acceptCallBtn = document.getElementById("acceptCallBtn");
+const declineCallBtn = document.getElementById("declineCallBtn");
+const outgoingCallSound = document.getElementById("outgoing-call-sound");
+const incomingCallSound = document.getElementById("incoming-call-sound");
 const notificationSound = new Audio(
   "https://tinday.app.tc/assets/twinday/sounds/TinDay-Message.mp3"
 );
@@ -128,20 +137,9 @@ const notificationVerified = new Audio(
 const messageSendSound = new Audio(
   "https://tinday.app.tc/assets/twinday/sounds/TinDay-MessageSend.mp3"
 );
-
 const callEndSound = new Audio(
   "https://tinday.app.tc/assets/twinday/sounds/TinDay-CallTimeoutAndRejected.mp3"
 );
-
-const callUserBtn = document.getElementById("callUser");
-const remoteAudioContainer = document.getElementById("remote-audio-container");
-const callPanel = document.getElementById("call-panel");
-const callerNameDiv = document.getElementById("caller-name");
-const callTimerDiv = document.getElementById("call-timer");
-const acceptCallBtn = document.getElementById("acceptCallBtn");
-const declineCallBtn = document.getElementById("declineCallBtn");
-const outgoingCallSound = document.getElementById("outgoing-call-sound");
-const incomingCallSound = document.getElementById("incoming-call-sound");
 
 const AUTOLOGIN_ENABLED_KEY = "tinday_autologin_enabled";
 const CALLS_FEATURE_ENABLED_KEY = "tinday_calls_feature_enabled";
@@ -154,19 +152,16 @@ const p2pSpamTracker = new Map();
 const P2P_SPAM_THRESHOLD = 300;
 const P2P_SPAM_WINDOW_MS = 10000;
 const P2P_COOLDOWN_DURATION_MS = 1 * 60 * 1000;
-
 const birthdaySound = document.getElementById("birthday-sound");
 const birthdayShortSound = document.getElementById("birthday-short-sound");
 const BIRTHDAY_WISH_KEY_PREFIX = "tinday_birthday_wishes_";
+
 let isBirthdayToday = false;
 let birthdayCelebrationTimeout;
-
 const callSFX = [outgoingCallSound, incomingCallSound, callEndSound];
-
 const SHARE_BASE_URL = "https://tinday.app.tc/";
 let originalBirthdayRoomName = "";
 let initialCustomRoomName = null;
-
 let socket = null;
 let discordCommunity = null;
 let myName = "";
@@ -223,16 +218,24 @@ let isCleaningUp = false;
 let profanityList = new Set();
 let profanityRegex = null;
 let _lastMessageDisplayPromise = Promise.resolve();
-
-console.log("%cDİKKAT!", "color: red; font-weight: bold; font-size: 45px;");
-console.log(
-  "%cBu geliştirici konsolu özelliği sadece geliştirici kullanıcılar içindir.",
-  "color: yellow; font-weight: bold; font-size: 25px;"
-);
-console.log(
-  "%cEğer biri sana bir TinDay özelliğini açmak için bir şey kopyalayıp buraya yapıştırmanı söylediyse, saldırı içindir! Böyle bir işlem, tarayıcına saldırı yapılmasına ve tarayıcı verilerinin ele geçirilmesine yol açabilir.",
-  "color: white; font-weight: bold; font-size: 20px;"
-);
+let hasHandledLoadedImage = false;
+let isPanning = false;
+let startX, startY;
+let transformX = 0,
+  transformY = 0;
+let scale = 1;
+const maxScale = 5;
+const minScale = 1;
+let initialDistance = null;
+let touchStartX, touchStartY;
+let lastTouches = [];
+const blockedUsers = new Set();
+let isDragging = false;
+let panStartThreshold = 5;
+let touchStartTime = 0;
+let rafPending = false;
+const TENOR_API_KEY = "LIVDSRZULELA";
+let gifSearchTimeout;
 
 function hideModal() {
   clearInterval(countdownInterval);
@@ -391,8 +394,42 @@ function loadUserData() {
 }
 
 function checkFormValidity() {
+  const birthDateValue = birthdayInput.value;
+  let isDateValid = false;
+  let errorMessage = "";
+  if (birthDateValue) {
+    const birthDate = new Date(birthDateValue);
+    if (isNaN(birthDate.getTime())) {
+      errorMessage = "Lütfen geçerli bir tarih girin.";
+    } else {
+      const year = birthDate.getFullYear();
+      const currentYear = new Date().getFullYear();
+      const minYear = 1900;
+
+      if (year > currentYear) {
+        errorMessage = "Gelecekte bir tarih seçemezsiniz.";
+      } else if (year < minYear) {
+        errorMessage = `Doğum yılı ${minYear} tarihinden önce olamaz.`;
+      } else {
+        isDateValid = true;
+      }
+    }
+  }
+  birthdayInput.setCustomValidity(errorMessage);
   connectBtn.disabled =
-    !nameInput.value || (birthdayInput.required && !birthdayInput.value);
+    !nameInput.value || (birthdayInput.required && !isDateValid);
+}
+
+function calculateAge(birthdateString) {
+  if (!birthdateString) return 0;
+  const birthDate = new Date(birthdateString);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
 }
 
 function populateFormWithPreviousData() {
@@ -465,21 +502,20 @@ async function handleFileSelected(file) {
   const safeFileName = file.name
     .replace(/[\\/:*?"<>|]/g, "_")
     .substring(0, 100);
-
   const filePayload = {
     name: safeFileName,
     type: file.type,
     data_base64: fileDataUrl,
   };
-
+  const userAge = calculateAge(birthdayInput.value);
   const messagePayload = {
     sender: myName,
     content: "",
     file: filePayload,
     timestamp: new Date().toISOString(),
     id: "msg-" + Date.now(),
+    age: userAge,
   };
-
   sendMessageToServer({
     cmd: "gmsg",
     val: JSON.stringify(messagePayload),
@@ -553,9 +589,13 @@ const handleConnect = (event) => {
 
   socket = new WebSocket(CL_SERVER_IP);
   socket.onopen = () => {
+    const userDataPayload = {
+      nickname: myName,
+      birthdate: birthday,
+    };
     sendMessageToServer({
       cmd: "setid",
-      val: myName,
+      val: JSON.stringify(userDataPayload),
       listener: "username_cfg",
     });
   };
@@ -768,26 +808,34 @@ const handleIncomingMessage = (packet) => {
 
 const handleGlobalMessage = (packet) => {
   try {
-    const messageData = sanitizeMessageObject(JSON.parse(packet.val));
-
-    if (messageData.type === "birthday_wish") {
+    const messageData = JSON.parse(packet.val);
+    if (messageData.hasOwnProperty("age")) {
+      const age = messageData.age;
+      if (
+        typeof age !== "number" ||
+        !Number.isInteger(age) ||
+        age < 0 ||
+        age > 150
+      ) {
+        messageData.age = null;
+      }
+    }
+    const sanitizedMessageData = sanitizeMessageObject(messageData);
+    if (sanitizedMessageData.type === "birthday_wish") {
       const today = new Date().toISOString().split("T")[0];
       const key = BIRTHDAY_WISH_KEY_PREFIX + today;
       let wishers = JSON.parse(localStorage.getItem(key) || "[]");
-
-      if (wishers.includes(messageData.sender)) {
+      if (wishers.includes(sanitizedMessageData.sender)) {
         return;
       }
-
-      wishers.push(messageData.sender);
+      wishers.push(sanitizedMessageData.sender);
       localStorage.setItem(key, JSON.stringify(wishers));
     }
-
-    if (messageData.sender !== myName) {
-      displayMessage(messageData, false, false);
+    if (sanitizedMessageData.sender !== myName) {
+      displayMessage(sanitizedMessageData, false, false);
     }
   } catch (e) {
-    console.warn("Received non-JSON GMSG");
+    console.warn("Received GMSG Error");
   }
 };
 
@@ -814,6 +862,7 @@ async function renderFavoritesPanel() {
       const favDiv = document.createElement("div");
       favDiv.className = "favorite-item";
       favDiv.innerHTML = `<img src="${item.url}" alt="Favori" loading="lazy">`;
+      const userAge = calculateAge(birthdayInput.value);
 
       favDiv.onclick = () => {
         const payload = {
@@ -821,6 +870,7 @@ async function renderFavoritesPanel() {
           content: item.url,
           timestamp: new Date().toISOString(),
           id: "msg-" + Date.now(),
+          age: userAge,
         };
         sendMessageToServer({
           cmd: "gmsg",
@@ -922,8 +972,11 @@ async function sendInboxMessage() {
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+  const userAge = calculateAge(birthdayInput.value);
   const messageText = messageInput.value.trim();
   if (messageText) {
+    messageInput.value = "";
+
     const conn = peer.connect(targetPeerId, {
       label: "text-message",
       reliable: true,
@@ -935,16 +988,16 @@ async function sendInboxMessage() {
         transferId: "text-" + Date.now() + Math.random(),
         senderId: myName,
         content: messageText,
+        age: userAge,
       };
       conn.send(payload);
       displaySystemNotification(
-        `Özel mesajınız "${truncateText(
+        `Özel mesajınız ${truncateText(
           targetRawId.split("#")[0],
           20
-        )}" kullanıcısına gönderildi.`,
+        )} kullanıcısına gönderildi.`,
         "info"
       );
-      messageInput.value = "";
       setTimeout(() => conn.close(), 500);
     });
 
@@ -954,88 +1007,93 @@ async function sendInboxMessage() {
         "error"
       );
     });
-  } else {
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.style.display = "none";
-    const file = await new Promise((resolve) => {
-      fileInput.onchange = (e) =>
-        resolve(e.target.files.length > 0 ? e.target.files[0] : null);
-      document.body.onfocus = () => {
-        setTimeout(() => {
-          if (fileInput.files.length === 0) resolve(null);
-          document.body.onfocus = null;
-        }, 300);
-      };
-      fileInput.click();
-    });
 
-    if (!file) {
-      displaySystemNotification("Dosya seçimi iptal edildi.", "info");
-      return;
-    }
-
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      displaySystemNotification(
-        `Dosya boyutu çok büyük Maksimum ${
-          MAX_FILE_SIZE_BYTES / 1024 / 1024
-        }mb.`,
-        "error"
-      );
-      return;
-    }
-
-    const conn = peer.connect(targetPeerId, {
-      label: "file-transfer",
-      reliable: true,
-    });
-
-    conn.on("open", async () => {
-      const transferId = "transfer-" + Date.now() + Math.random();
-      const fileReader = new FileReader();
-      fileReader.onload = (e) => {
-        const base64Data = e.target.result;
-        const totalChunks = Math.ceil(base64Data.length / CHUNK_SIZE);
-
-        conn.send({
-          type: "file-transfer-start",
-          transferId: transferId,
-          senderId: myName,
-          fileInfo: {
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            totalChunks: totalChunks,
-          },
-        });
-
-        for (let i = 0; i < totalChunks; i++) {
-          const chunk = base64Data.substring(
-            i * CHUNK_SIZE,
-            (i + 1) * CHUNK_SIZE
-          );
-          conn.send({
-            type: "file-chunk",
-            transferId: transferId,
-            chunkIndex: i,
-            data: chunk,
-          });
-        }
-
-        conn.send({ type: "file-transfer-end", transferId: transferId });
-        displaySystemNotification(`${file.name} gönderildi.`, "info");
-      };
-      fileReader.onerror = () => {
-        displaySystemNotification("Dosya okunurken bir hata oluştu.", "error");
-        conn.close();
-      };
-      fileReader.readAsDataURL(file);
-    });
-
-    conn.on("error", (err) => {
-      displaySystemNotification(`Dosya gönderilemedi. P2P Hatası.`, "error");
-    });
+    return;
   }
+
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.style.display = "none";
+  const file = await new Promise((resolve) => {
+    fileInput.onchange = (e) =>
+      resolve(e.target.files.length > 0 ? e.target.files[0] : null);
+    document.body.onfocus = () => {
+      setTimeout(() => {
+        if (fileInput.files.length === 0) resolve(null);
+        document.body.onfocus = null;
+      }, 300);
+    };
+    fileInput.click();
+  });
+
+  if (!file) {
+    displaySystemNotification("Dosya seçimi iptal edildi.", "info");
+    return;
+  }
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    displaySystemNotification(
+      `Dosya boyutu çok büyük. Maksimum ${
+        MAX_FILE_SIZE_BYTES / 1024 / 1024
+      }MB.`,
+      "error"
+    );
+    return;
+  }
+
+  const conn = peer.connect(targetPeerId, {
+    label: "file-transfer",
+    reliable: true,
+  });
+
+  conn.on("open", () => {
+    const transferId = "transfer-" + Date.now() + Math.random();
+    const fileReader = new FileReader();
+
+    fileReader.onload = (e) => {
+      const base64Data = e.target.result;
+      const totalChunks = Math.ceil(base64Data.length / CHUNK_SIZE);
+      conn.send({
+        type: "file-transfer-start",
+        transferId: transferId,
+        senderId: myName,
+        age: userAge,
+        fileInfo: {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          totalChunks: totalChunks,
+        },
+      });
+
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = base64Data.substring(
+          i * CHUNK_SIZE,
+          (i + 1) * CHUNK_SIZE
+        );
+        conn.send({
+          type: "file-chunk",
+          transferId: transferId,
+          chunkIndex: i,
+          data: chunk,
+        });
+      }
+
+      conn.send({ type: "file-transfer-end", transferId: transferId });
+      displaySystemNotification(`${file.name} gönderildi.`, "info");
+    };
+
+    fileReader.onerror = () => {
+      displaySystemNotification("Dosya okunurken bir hata oluştu.", "error");
+      conn.close();
+    };
+
+    fileReader.readAsDataURL(file);
+  });
+
+  conn.on("error", (err) => {
+    displaySystemNotification(`Dosya gönderilemedi. P2P Hatası.`, "error");
+  });
 }
 
 const handleSendMessage = async (event) => {
@@ -1186,7 +1244,7 @@ const handleSendMessage = async (event) => {
   const chatTimeoutTimer = messageText.match(chatTimeoutRegex);
   if (chatTimeoutTimer) {
     const rawValue = chatTimeoutTimer[2]?.replace(/\D/g, "") || "0";
-    const reTimer = Math.min(Math.max(Number(rawValue), 0), 5);
+    const reTimer = Math.min(Math.max(Number(rawValue), 0), 3);
     messageInput.value = "";
 
     const oldTimer = Number(localStorage.getItem(CHAT_TIMEOUT_TIME_KEY)) || 0;
@@ -1294,12 +1352,14 @@ const handleSendMessage = async (event) => {
   actionsPopup.classList.remove("visible");
   addButton.classList.remove("active");
   favoritesPanel.classList.remove("active");
+  const userAge = calculateAge(birthdayInput.value);
 
   const messagePayload = {
     sender: myName,
     content: processedText,
     timestamp: new Date().toISOString(),
     id: "msg-" + Date.now(),
+    age: userAge,
   };
 
   if (replyingToMessage) {
@@ -1555,12 +1615,10 @@ const _renderMessageToDOM = async (
         ? notificationFocused.play()
         : notificationSound.play();
     }
-
     const senderName = data.sender.split("#")[0];
     const displayName = truncateText(senderName, 33);
     const header = document.createElement("strong");
     header.classList.add("message-header");
-
     if (isPrivate) {
       header.textContent = `${displayName} | `;
       const subtleNote = document.createElement("span");
@@ -1568,10 +1626,15 @@ const _renderMessageToDOM = async (
       subtleNote.textContent = "Bu mesajı sadece siz görebilirsiniz.";
       header.appendChild(subtleNote);
     } else {
-      header.textContent = `${displayName} | ${new Date().toLocaleTimeString(
-        "tr-TR",
-        { hour: "2-digit", minute: "2-digit" }
-      )}`;
+      const timeString = new Date().toLocaleTimeString("tr-TR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      if (data.age && data.age > 0) {
+        header.textContent = `${data.age} • ${displayName} | ${timeString}`;
+      } else {
+        header.textContent = `${displayName} | ${timeString}`;
+      }
     }
     messageDiv.appendChild(header);
 
@@ -1607,6 +1670,8 @@ const _renderMessageToDOM = async (
   for (const imageUrl of images) {
     const imgContainer = document.createElement("div");
     imgContainer.className = "message-image-container";
+    imgContainer.addEventListener("click", () => openImagePreview(imageUrl));
+    imgContainer.style.cursor = "pointer";
     const img = document.createElement("img");
     img.src = imageUrl;
     img.alt = "Gönderilen Resim";
@@ -1621,16 +1686,15 @@ const _renderMessageToDOM = async (
       ? `<i class="fa-solid fa-star"></i>`
       : `<i class="fa-regular fa-star"></i>`;
     starButton.onclick = (e) => {
+      e.stopPropagation();
       const style = window.getComputedStyle(starButton);
       if (style.opacity === "0") return;
-      e.stopPropagation();
       toggleFavorite(imageUrl);
     };
     imgContainer.appendChild(img);
     imgContainer.appendChild(starButton);
     messageDiv.appendChild(imgContainer);
   }
-
   if (audios && audios.length > 0) {
     for (const audioUrl of audios) {
       messageDiv.appendChild(createCustomAudioPlayer(audioUrl));
@@ -1655,32 +1719,34 @@ const _renderMessageToDOM = async (
       return;
     }
 
-    if (type === "image/svg+xml") {
-      try {
-        const dirtySvgText = decodeURIComponent(
-          atob(data_base64.split(",")[1] || "")
-        );
-
-        const cleanSvgText = DOMPurify.sanitize(dirtySvgText, {
-          USE_PROFILES: { svg: true },
-        });
-
-        const safeDataUrl =
-          "data:image/svg+xml;base64," +
-          btoa(unescape(encodeURIComponent(cleanSvgText)));
-
-        const imgContainer = document.createElement("div");
-        imgContainer.className = "message-image-container";
-        imgContainer.innerHTML = `<img src="${safeDataUrl}" class="message-image" alt="${DOMPurify.sanitize(
-          name
-        )}" loading="lazy"/>`;
-        messageDiv.appendChild(imgContainer);
-      } catch (e) {
-        displaySystemNotification(
-          "Bozuk veya geçersiz bir SVG dosyası alındı ve engellendi.",
-          "error"
-        );
+    if (type === "image/svg+xml" || ALLOWED_MIME_PATTERNS.image.test(type)) {
+      const imgContainer = document.createElement("div");
+      imgContainer.className = "message-image-container";
+      imgContainer.addEventListener("click", () =>
+        openImagePreview(data_base64)
+      );
+      imgContainer.style.cursor = "pointer";
+      let imageUrlToUse = data_base64;
+      if (type === "image/svg+xml") {
+        try {
+          const dirtySvgText = decodeURIComponent(
+            atob(data_base64.split(",")[1] || "")
+          );
+          const cleanSvgText = DOMPurify.sanitize(dirtySvgText, {
+            USE_PROFILES: { svg: true },
+          });
+          imageUrlToUse =
+            "data:image/svg+xml;base64," +
+            btoa(unescape(encodeURIComponent(cleanSvgText)));
+        } catch (e) {
+          console.error("Image Error");
+        }
       }
+
+      imgContainer.innerHTML = `<img src="${imageUrlToUse}" class="message-image" alt="${DOMPurify.sanitize(
+        name
+      )}" loading="lazy"/>`;
+      messageDiv.appendChild(imgContainer);
     } else if (ALLOWED_MIME_PATTERNS.image.test(type)) {
       const imgContainer = document.createElement("div");
       imgContainer.className = "message-image-container";
@@ -1729,6 +1795,27 @@ const _renderMessageToDOM = async (
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 };
 
+function blockUser(fullUserId) {
+  if (!fullUserId) return;
+  const peerId = fullUserId
+    .replace(/[#\s]+/g, "-")
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  if (peerId && !blockedUsers.has(peerId)) {
+    blockedUsers.add(peerId);
+    const displayName = fullUserId.split("#")[0];
+    displaySystemNotification(
+      `'${truncateText(
+        displayName,
+        20
+      )}' engellendi. Bu kullanıcıdan gelen P2P istekleri artık otomatik olarak reddedilecek.`,
+      "info"
+    );
+  }
+}
+
 function displayLocalAiMessage(content, senderName) {
   const messageDiv = document.createElement("div");
   messageDiv.classList.add("message", "message-ai");
@@ -1766,7 +1853,7 @@ function displayHelpMessage() {
     {
       cmd: "t.chatslower",
       alias: "t.cslor",
-      desc: "Gelen mesajları yavaşlatır, 0-5s arasında değer girilebilir. Örneğin 't.chatslower 5'",
+      desc: "Gelen mesajları yavaşlatır, 0-3s arasında değer girilebilir. Örneğin 't.chatslower 5'",
     },
     {
       cmd: "t.inbox",
@@ -1951,11 +2038,25 @@ document.addEventListener("mouseout", (e) => {
   }
 });
 
+imagePreviewOverlay.addEventListener("click", (e) => {
+  if (e.target === imagePreviewOverlay) {
+    closeImagePreview();
+  }
+});
+
+imagePreviewClose.addEventListener("click", (e) => {
+  closeImagePreview();
+});
+
 document.addEventListener("keydown", (e) => {
   const isInputFocused = document.activeElement === messageInput;
   const isModalVisible = dynamicModal.classList.contains("show");
 
   if (isModalVisible) return;
+
+  if (e.key === "Escape" && imagePreviewOverlay.classList.contains("visible")) {
+    closeImagePreview();
+  }
 
   if (e.ctrlKey && e.key.toLowerCase() === "f") {
     e.preventDefault();
@@ -2004,7 +2105,11 @@ document.addEventListener("keydown", (e) => {
   )
     return;
   if (/^[a-z]$/i.test(e.key)) {
-    messageInput.focus();
+    if (gifPanel.classList.contains("active")) {
+      gifSearchInput.focus();
+    } else {
+      messageInput.focus();
+    }
   }
 });
 
@@ -2485,6 +2590,14 @@ function initializePeerEvents(p) {
   p.on("disconnected", handlePeerDisconnect);
 
   p.on("call", (incomingCall) => {
+    if (blockedUsers.has(incomingCall.peer)) {
+      console.log(
+        `Engellenen kullanıcıdan gelen arama reddedildi: ${incomingCall.peer}`
+      );
+      incomingCall.close();
+      return;
+    }
+
     if (currentCall) {
       currentCall.close();
     }
@@ -2492,6 +2605,15 @@ function initializePeerEvents(p) {
   });
 
   p.on("connection", (conn) => {
+    if (blockedUsers.has(conn.peer)) {
+      console.log(
+        `Engellenen kullanıcıdan gelen bağlantı reddedildi: ${conn.peer}`
+      );
+      conn.on("open", () => {
+        conn.close();
+      });
+      return;
+    }
     if (conn.label === "call-control") {
       if (isCallActive || isCleaningUp || !areCallsEnabled) {
         conn.on("open", () => {
@@ -2733,6 +2855,7 @@ addButton.addEventListener("click", (e) => {
   addButton.classList.toggle("active");
   favoritesPanel.classList.remove("active");
   inboxPanel.classList.remove("active");
+  gifPanel.classList.remove("active");
 });
 
 uploadFileBtn.addEventListener("click", () => {
@@ -2751,6 +2874,7 @@ openFavoritesBtn.addEventListener("click", () => {
   favoritesPanel.classList.add("active");
   actionsPopup.classList.remove("visible");
   addButton.classList.remove("active");
+  gifPanel.classList.remove("active");
 });
 
 document.addEventListener("paste", (e) => {
@@ -2793,6 +2917,10 @@ document.addEventListener("click", (e) => {
     return;
   }
 
+  if (!gifPanel.contains(e.target) && !openGifBtn.contains(e.target)) {
+    gifPanel.classList.remove("active");
+  }
+
   if (targetMessage) {
     clickCount++;
     if (clickCount === 1) {
@@ -2821,6 +2949,19 @@ document.addEventListener("click", (e) => {
 
   if (menuJustOpened) {
     menuJustOpened = false;
+  }
+
+  if (!inboxPanel.contains(e.target) && !inboxButton.contains(e.target)) {
+    inboxPanel.classList.remove("active");
+  }
+
+  const target = e.target.closest("button");
+  if (target) {
+    if (target.classList.contains("inbox-accept-btn")) {
+      acceptInboxItem(target.dataset.id);
+    } else if (target.classList.contains("inbox-decline-btn")) {
+      declineFileTransfer(target.dataset.id);
+    }
   }
 });
 
@@ -3072,26 +3213,26 @@ function renderInboxPanel() {
     inboxRequests.forEach((req, id) => {
       const itemDiv = document.createElement("div");
       itemDiv.className = "inbox-item";
-      const rawSenderId = req.senderId;
       let senderDisplayName;
-      const parts = rawSenderId.split("-");
-      if (parts.length > 1) {
-        senderDisplayName = parts.slice(0, -1).join("-");
+      if (req.senderId.includes("#")) {
+        senderDisplayName = req.senderId.split("#")[0];
       } else {
-        senderDisplayName = rawSenderId;
+        const parts = req.senderId.split("-");
+        senderDisplayName = parts.slice(0, -1).join("-");
       }
       const senderName = DOMPurify.sanitize(senderDisplayName);
 
       let requestInfoHTML = "";
+      const agePrefix = req.age && req.age > 0 ? `${req.age} • ` : "";
 
       if (req.file) {
         const fileName = DOMPurify.sanitize(req.file.name);
         requestInfoHTML = `
                   <div class="inbox-item-info">
-                    <strong class="inbox-item-sender">${truncateText(
-                      senderName,
-                      20
-                    )}</strong>
+                    <strong class="inbox-item-sender">${agePrefix}${truncateText(
+          senderName,
+          20
+        )}</strong>
                     <span class="inbox-item-file">${truncateText(
                       fileName,
                       25
@@ -3103,10 +3244,10 @@ function renderInboxPanel() {
         });
         requestInfoHTML = `
                   <div class="inbox-item-info">
-                    <strong class="inbox-item-sender">${truncateText(
-                      senderName,
-                      20
-                    )} size özel bir mesaj gönderdi.</strong>
+                    <strong class="inbox-item-sender">${agePrefix}${truncateText(
+          senderName,
+          20
+        )} size özel bir mesaj gönderdi.</strong>
                     <span class="inbox-item-file">${truncateText(
                       messagePreview,
                       35
@@ -3129,19 +3270,56 @@ function renderInboxPanel() {
 
 function acceptInboxItem(transferId) {
   const request = inboxRequests.get(transferId);
-  if (request) {
-    const messagePayload = {
-      sender: request.senderId,
-      content: request.content || "",
-      file: request.file || null,
-      timestamp: new Date().toISOString(),
-    };
-
-    displayMessage(messagePayload, false, false, true);
-
-    inboxRequests.delete(transferId);
-    renderInboxPanel();
+  if (!request) return;
+  const sanitizedSenderId = DOMPurify.sanitize(request.senderId, {
+    USE_PROFILES: { html: false },
+  });
+  const sanitizedContent = request.content
+    ? DOMPurify.sanitize(request.content, { USE_PROFILES: { html: false } })
+    : "";
+  let validatedAge = null;
+  if (request.hasOwnProperty("age")) {
+    const age = request.age;
+    if (
+      typeof age === "number" &&
+      Number.isInteger(age) &&
+      age >= 0 &&
+      age <= 150
+    ) {
+      validatedAge = age;
+    }
   }
+  let sanitizedFile = null;
+  if (request.file) {
+    sanitizedFile = {
+      ...request.file,
+      name: DOMPurify.sanitize(request.file.name, {
+        USE_PROFILES: { html: false },
+      }),
+    };
+  }
+  let displayName;
+  if (sanitizedSenderId.includes("#")) {
+    displayName = sanitizedSenderId.split("#")[0];
+  } else {
+    const parts = sanitizedSenderId.split("-");
+    displayName = parts.slice(0, -1).join("-");
+  }
+
+  const finalSenderId = `${displayName}#p2p-${Math.random()
+    .toString(36)
+    .substring(7)}`;
+  const messagePayload = {
+    sender: finalSenderId,
+    content: sanitizedContent,
+    file: sanitizedFile,
+    timestamp: new Date().toISOString(),
+    age: validatedAge,
+  };
+
+  displayMessage(messagePayload, false, false, true);
+  inboxRequests.delete(transferId);
+  renderInboxPanel();
 }
 
 function declineFileTransfer(transferId) {
@@ -3159,20 +3337,13 @@ inboxButton.addEventListener("click", (e) => {
   favoritesPanel.classList.remove("active");
   actionsPopup.classList.remove("visible");
   addButton.classList.remove("active");
+  gifPanel.classList.remove("active");
 });
 
-document.addEventListener("click", (e) => {
-  if (!inboxPanel.contains(e.target) && !inboxButton.contains(e.target)) {
-    inboxPanel.classList.remove("active");
-  }
-
-  const target = e.target.closest("button");
-  if (target) {
-    if (target.classList.contains("inbox-accept-btn")) {
-      acceptInboxItem(target.dataset.id);
-    } else if (target.classList.contains("inbox-decline-btn")) {
-      declineFileTransfer(target.dataset.id);
-    }
+gifPanel.addEventListener("transitionend", () => {
+  if (!gifPanel.classList.contains("active")) {
+    gifContent.innerHTML = "";
+    gifSearchInput.value = "";
   }
 });
 
@@ -3245,7 +3416,13 @@ window.addEventListener("load", () => {
     checkFormValidity();
   }
 
-  displaySystemNotification("Komutlar için 't.help' yazabilirsiniz.");
+  if (MESSAGE_SLOWER_TIMER === 0) {
+    displaySystemNotification("Komutlar için 't.help' yazabilirsiniz.");
+  } else {
+    displaySystemNotification(
+      "Komutlar için 't.help' yazabilirsiniz, Sohbet Yavaşlatma Açık."
+    );
+  }
 });
 
 function toggleCallsFeature() {
@@ -3488,13 +3665,14 @@ function createCustomVideoPlayer(data_base64) {
 document.getElementById("sendGiftUser").addEventListener("click", () => {
   if (targetUserIdForCall) {
     const targetUsername = targetUserIdForCall.split("#")[0];
-
+    const userAge = calculateAge(birthdayInput.value);
     const payload = {
       sender: myName,
       content: `Doğum günün kutlu olsun ${targetUsername}! 🎁`,
       timestamp: new Date().toISOString(),
       id: "msg-" + Date.now(),
       type: "birthday_wish",
+      age: userAge,
     };
 
     sendMessageToServer({ cmd: "gmsg", val: JSON.stringify(payload) });
@@ -3520,7 +3698,7 @@ async function initializeBirthdayCelebration(userBirthdate, roomName) {
   isBirthdayToday = now >= birthdayThisYear && now < birthdayEndThisYear;
 
   if (isBirthdayToday) {
-    triggerSameDayCelebration(roomName);
+    triggerSameDayCelebration(roomName, userBirthdate);
     return;
   }
 
@@ -3537,7 +3715,7 @@ async function initializeBirthdayCelebration(userBirthdate, roomName) {
     timeUntilNextBirthday > 0 &&
     timeUntilNextBirthday <= 24 * 60 * 60 * 1000
   ) {
-    scheduleUpcomingBirthdayCheck(nextBirthday);
+    scheduleUpcomingBirthdayCheck(nextBirthday, userBirthdate);
     return;
   }
 
@@ -3546,11 +3724,11 @@ async function initializeBirthdayCelebration(userBirthdate, roomName) {
     timeSinceBirthday > 0 && timeSinceBirthday < 90 * 24 * 60 * 60 * 1000;
 
   if (wasBirthdayRecently) {
-    triggerOneDayLateCelebration(roomName);
+    triggerOneDayLateCelebration(roomName, userBirthdate);
   }
 }
 
-function scheduleUpcomingBirthdayCheck(targetBirthdayDate) {
+function scheduleUpcomingBirthdayCheck(targetBirthdayDate, userBirthdate) {
   if (birthdayCheckInterval) clearInterval(birthdayCheckInterval);
 
   birthdayCheckInterval = setInterval(() => {
@@ -3558,15 +3736,15 @@ function scheduleUpcomingBirthdayCheck(targetBirthdayDate) {
     const remainingMs = targetBirthdayDate.getTime() - now.getTime();
     if (remainingMs <= 30000 && remainingMs > 0) {
       clearInterval(birthdayCheckInterval);
-      startDynamicBirthdayCountdown(remainingMs);
+      startDynamicBirthdayCountdown(remainingMs, userBirthdate);
     } else if (remainingMs <= 0) {
       clearInterval(birthdayCheckInterval);
-      triggerBirthdayCelebration();
+      triggerBirthdayCelebration(userBirthdate);
     }
   }, 1000);
 }
 
-function startDynamicBirthdayCountdown(remainingMs) {
+function startDynamicBirthdayCountdown(remainingMs, userBirthdate) {
   let messageSystemSenderName = "TinDay Official Team";
   let messageSystemInfo = "Bu mesaj size ve doğum günü ikizlerinize özel...";
   displaySpecialSystemMessage(
@@ -3591,19 +3769,20 @@ function startDynamicBirthdayCountdown(remainingMs) {
         countdownNumberEl.textContent = count;
       } else {
         clearInterval(visualInterval);
-        triggerBirthdayCelebration();
+        triggerBirthdayCelebration(userBirthdate);
       }
     }, 1000);
   }, initialDelayMs);
 }
 
-function triggerSameDayCelebration(roomName) {
+function triggerSameDayCelebration(roomName, userBirthdate) {
   const celebratedKey = `celebrated_${roomName}_${new Date().getFullYear()}`;
   if (localStorage.getItem(celebratedKey)) {
     return;
   }
 
   const myUsername = myName.split("#")[0];
+  const newAge = calculateAge(userBirthdate);
   const now = new Date();
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
@@ -3616,9 +3795,9 @@ function triggerSameDayCelebration(roomName) {
     ];
 
   if (timeSinceMidnight <= threeHoursInMs) {
-    message = `Geri sayımı kaçırdın ama olsun, Doğum günün kutlu olsun ${myUsername}! ❤️🥳🎉 ${randomGif}`;
+    message = `Geri sayımı kaçırdın ama olsun, ${newAge}. yaşın kutlu olsun ${myUsername}! ❤️🥳🎉 ${randomGif}`;
   } else {
-    message = `Doğum günün kutlu olsun ${myUsername}! Nice senelere! ❤️🥳🎉 ${randomGif}`;
+    message = `${newAge}. yaşın kutlu olsun ${myUsername}! Nice senelere! ❤️🥳🎉 ${randomGif}`;
   }
 
   let messageSystemSenderName = "TinDay Official Team";
@@ -3633,7 +3812,7 @@ function triggerSameDayCelebration(roomName) {
   localStorage.setItem(celebratedKey, "true");
 }
 
-function triggerOneDayLateCelebration(roomName) {
+function triggerOneDayLateCelebration(roomName, userBirthdate) {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const celebratedKey = `celebrated_${roomName}_${yesterday.getFullYear()}`;
@@ -3641,11 +3820,12 @@ function triggerOneDayLateCelebration(roomName) {
     return;
   }
   const myUsername = myName.split("#")[0];
+  const newAge = calculateAge(userBirthdate);
   const randomGif =
     RANDOM_BIRTHDAY_GIFS[
       Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
     ];
-  const messageText = `Geçmiş doğum günün kutlu olsun ${myUsername}! Umarız harika bir gün geçirmişsindir... 🥳🎉 ${randomGif}`;
+  const messageText = `Geçmiş ${newAge}. yaşın kutlu olsun ${myUsername}! Umarız harika bir gün geçirmişsindir... 🥳🎉 ${randomGif}`;
 
   let messageSystemSenderName = "TinDay Official Team";
   let messageSystemInfo = "Bu mesaj size özel...";
@@ -3680,6 +3860,7 @@ function startBirthdayCountdown() {
       birthdayCountdownOverlay.classList.add("visible");
       let count = 5;
       countdownNumberEl.textContent = count;
+      messageInput.disabled = true;
 
       const interval = setInterval(() => {
         messageInput.placeholder = "Doğum günü kutlaması başlıyor...";
@@ -3695,22 +3876,26 @@ function startBirthdayCountdown() {
   }, 1000);
 }
 
-function triggerBirthdayCelebration() {
+function triggerBirthdayCelebration(userBirthdate) {
   birthdayCountdownOverlay.classList.remove("visible");
   messageInput.placeholder = "Bir mesaj yaz... (Komutlar için t.help)";
+  messageInput.disabled = false;
 
   isBirthdayToday = true;
   startConfetti();
   birthdaySound.play().catch((e) => console.error("Birthday Sound Error"));
 
   const myUsername = myName.split("#")[0];
+  const newAge = calculateAge(userBirthdate);
+  const ageText = newAge > 0 ? `${newAge}. Yaşınız` : "Doğum Gününüz";
+
   const randomGif =
     RANDOM_BIRTHDAY_GIFS[
       Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
     ];
   const celebrationMessage = {
     sender: "Official TinDay Team",
-    content: `🎂 Doğum gününüz kutlu olsun ${myUsername}! Nice mutlu senelere!🥳 ${randomGif}`,
+    content: `🎂 ${ageText} kutlu olsun ${myUsername}! Nice mutlu senelere!🥳 ${randomGif}`,
     timestamp: new Date().toISOString(),
     id: "msg-birthday-" + Date.now(),
   };
@@ -3953,4 +4138,401 @@ function containsProfanity(text) {
     return false;
   }
   return profanityRegex.test(text);
+}
+
+function openImagePreview(imageUrl) {
+  resetImageTransform();
+  try {
+    messageInput.disabled = true;
+    const urlObj = new URL(imageUrl);
+    const hostname = urlObj.hostname.replace(/^www\./, "");
+
+    const isTrusted = TRUSTED_IMAGE_DOMAINS.some((domain) =>
+      hostname.includes(domain)
+    );
+    const isPollinations = hostname.includes("image.pollinations.ai");
+    const isBase64 = imageUrl.startsWith("data:image/");
+
+    if (!isTrusted && !isPollinations && !isBase64) {
+      console.warn(
+        "Güvenilmeyen bir alandan resim önizlemesi engellendi:",
+        hostname
+      );
+      displaySystemNotification(
+        "Güvenlik nedeniyle bu resim önizlenemiyor.",
+        "error"
+      );
+      messageInput.disabled = false;
+      return;
+    }
+
+    if (imageUrl.startsWith("data:image/svg+xml")) {
+      const dirtySvgText = decodeURIComponent(
+        atob(imageUrl.split(",")[1] || "")
+      );
+      const cleanSvgText = DOMPurify.sanitize(dirtySvgText, {
+        USE_PROFILES: { svg: true },
+      });
+      const safeDataUrl =
+        "data:image/svg+xml;base64," +
+        btoa(unescape(encodeURIComponent(cleanSvgText)));
+      imagePreviewContent.src = safeDataUrl;
+    } else {
+      imagePreviewContent.src = imageUrl;
+    }
+
+    imagePreviewOverlay.classList.add("visible");
+  } catch (e) {
+    console.error("Geçersiz resim URL'si:", imageUrl, e);
+    displaySystemNotification(
+      "Resim görüntülenirken bir hata oluştu.",
+      "error"
+    );
+  }
+}
+
+function closeImagePreview() {
+  imagePreviewContainer.classList.remove("visible");
+  setTimeout(() => {
+    imagePreviewImage.src = "";
+    messageInput.disabled = false;
+    resetImageTransform();
+  }, 300);
+}
+
+function resetImageTransform() {
+  scale = 1;
+  transformX = 0;
+  transformY = 0;
+  isPanning = false;
+  imagePreviewImage.dataset.tx = "0";
+  imagePreviewImage.dataset.ty = "0";
+  imagePreviewImage.style.transition = "transform 0.3s ease";
+  imagePreviewImage.style.transform = `translate(${transformX}px, ${transformY}px) scale(${scale})`;
+  imagePreviewContainer.classList.remove("zoomed", "panning");
+}
+
+function applyTransform() {
+  if (rafPending) return;
+  rafPending = true;
+
+  requestAnimationFrame(() => {
+    imagePreviewImage.style.transform = `translate(${transformX}px, ${transformY}px) scale(${scale})`;
+    rafPending = false;
+  });
+}
+
+function getDistance(touches) {
+  const [touch1, touch2] = touches;
+  return Math.hypot(touch1.pageX - touch2.pageX, touch1.pageY - touch2.pageY);
+}
+
+function getMidpoint(touches) {
+  const [touch1, touch2] = touches;
+  return {
+    x: (touch1.pageX + touch2.pageX) / 2,
+    y: (touch1.pageY + touch2.pageY) / 2,
+  };
+}
+
+imagePreviewImage.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  isDragging = true;
+  startX = e.clientX;
+  startY = e.clientY;
+  imagePreviewImage.dataset.startX = transformX;
+  imagePreviewImage.dataset.startY = transformY;
+  imagePreviewImage.style.transition = "none";
+});
+
+window.addEventListener("mousemove", (e) => {
+  if (!isDragging) return;
+
+  const deltaX = Math.abs(e.clientX - startX);
+  const deltaY = Math.abs(e.clientY - startY);
+
+  if (
+    !isPanning &&
+    (deltaX > panStartThreshold || deltaY > panStartThreshold)
+  ) {
+    isPanning = true;
+    imagePreviewContainer.classList.add("panning");
+  }
+
+  if (isPanning && scale > 1) {
+    const startTx = parseFloat(imagePreviewImage.dataset.startX || "0");
+    const startTy = parseFloat(imagePreviewImage.dataset.startY || "0");
+    transformX = startTx + (e.clientX - startX);
+    transformY = startTy + (e.clientY - startY);
+    applyTransform();
+  }
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (!isDragging || e.button !== 0) return;
+
+  imagePreviewImage.style.transition = "transform 0.3s ease";
+
+  if (isPanning) {
+    imagePreviewImage.dataset.tx = transformX;
+    imagePreviewImage.dataset.ty = transformY;
+  } else {
+    if (scale > 1) {
+      resetImageTransform();
+    } else {
+      scale = 2;
+      const rect = imagePreviewImage.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const imgX = (mouseX / rect.width) * imagePreviewImage.offsetWidth;
+      const imgY = (mouseY / rect.height) * imagePreviewImage.offsetHeight;
+      transformX = -(imgX - imagePreviewImage.offsetWidth / 2);
+      transformY = -(imgY - imagePreviewImage.offsetHeight / 2);
+      applyTransform();
+      imagePreviewImage.dataset.tx = transformX;
+      imagePreviewImage.dataset.ty = transformY;
+      imagePreviewContainer.classList.add("zoomed");
+    }
+  }
+
+  isDragging = false;
+  isPanning = false;
+  imagePreviewContainer.classList.remove("panning");
+});
+
+imagePreviewContainer.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.2 : 0.2;
+  const newScale = Math.max(minScale, Math.min(maxScale, scale + delta));
+  if (newScale === scale) return;
+  const rect = imagePreviewContainer.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  const newTransformX =
+    transformX -
+    (mouseX - rect.width / 2 - transformX) * (newScale / scale - 1);
+  const newTransformY =
+    transformY -
+    (mouseY - rect.height / 2 - transformY) * (newScale / scale - 1);
+  scale = newScale;
+  transformX = newTransformX;
+  transformY = newTransformY;
+  applyTransform();
+  imagePreviewImage.dataset.tx = transformX;
+  imagePreviewImage.dataset.ty = transformY;
+  imagePreviewContainer.classList.toggle("zoomed", scale > 1);
+  if (scale === 1) {
+    resetImageTransform();
+  }
+});
+
+imagePreviewContainer.addEventListener(
+  "touchstart",
+  (e) => {
+    if (!imagePreviewImage.contains(e.target) && e.target !== imagePreviewImage)
+      return;
+
+    touchStartTime = new Date().getTime();
+    imagePreviewImage.style.transition = "none";
+
+    if (e.touches.length === 1) {
+      isDragging = true;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      imagePreviewImage.dataset.startX = transformX;
+      imagePreviewImage.dataset.startY = transformY;
+    } else if (e.touches.length === 2) {
+      isDragging = false;
+      isPanning = false;
+      initialDistance = getDistance(e.touches);
+    }
+  },
+  { passive: false }
+);
+
+imagePreviewContainer.addEventListener(
+  "touchmove",
+  (e) => {
+    if (isDragging || initialDistance) {
+      e.preventDefault();
+    }
+
+    if (e.touches.length === 1 && isDragging) {
+      const deltaX = e.touches[0].clientX - startX;
+      const deltaY = e.touches[0].clientY - startY;
+      if (
+        !isPanning &&
+        (Math.abs(deltaX) > panStartThreshold ||
+          Math.abs(deltaY) > panStartThreshold)
+      ) {
+        isPanning = true;
+      }
+
+      if (isPanning && scale > 1) {
+        const startTx = parseFloat(imagePreviewImage.dataset.startX || "0");
+        const startTy = parseFloat(imagePreviewImage.dataset.startY || "0");
+        transformX = startTx + deltaX;
+        transformY = startTy + deltaY;
+        applyTransform();
+      }
+    } else if (e.touches.length === 2 && initialDistance) {
+      const newDistance = getDistance(e.touches);
+      const scaleMultiplier = newDistance / initialDistance;
+      let newScale = scale * scaleMultiplier;
+      newScale = Math.max(minScale, Math.min(maxScale, newScale));
+      scale = newScale;
+      applyTransform();
+      initialDistance = newDistance;
+    }
+  },
+  { passive: false }
+);
+
+imagePreviewContainer.addEventListener("touchend", (e) => {
+  imagePreviewImage.style.transition = "transform 0.3s ease";
+  if (isPanning) {
+    imagePreviewImage.dataset.tx = transformX;
+    imagePreviewImage.dataset.ty = transformY;
+  }
+  isDragging = false;
+  isPanning = false;
+  initialDistance = null;
+  imagePreviewContainer.classList.remove("panning");
+  if (scale < 1) {
+    resetImageTransform();
+  }
+});
+
+async function searchGifs(searchTerm) {
+  if (!searchTerm) {
+    gifContent.innerHTML = "";
+    return;
+  }
+  gifContent.innerHTML =
+    '<div class="favorites-empty-state"><span>Yükleniyor...</span></div>';
+
+  try {
+    const url = `https://g.tenor.com/v1/search?q=${encodeURIComponent(
+      searchTerm
+    )}&key=${TENOR_API_KEY}&limit=12&media_filter=minimal`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`API hatası: ${response.status}`);
+    }
+    const data = await response.json();
+    renderGifResults(data.results);
+  } catch (error) {
+    console.error("GIF arama hatası:", error);
+    gifContent.innerHTML =
+      '<div class="favorites-empty-state"><span>GIF\'ler yüklenemedi.</span></div>';
+  }
+}
+
+function renderGifResults(gifs) {
+  gifContent.innerHTML = "";
+  if (!gifs || gifs.length === 0) {
+    gifContent.innerHTML =
+      '<div class="favorites-empty-state"><span>Sonuç bulunamadı.</span></div>';
+    return;
+  }
+  const grid = document.createElement("div");
+  grid.className = "favorites-grid";
+  const addedGifUrls = new Set();
+  gifs.forEach((gifData) => {
+    if (!gifData.media || gifData.media.length === 0) {
+      return;
+    }
+    const mediaObject = gifData.media[0];
+    const gifUrl = mediaObject.gif ? mediaObject.gif.url : null;
+    if (!gifUrl) {
+      return;
+    }
+    if (addedGifUrls.has(gifUrl)) {
+      return;
+    }
+    const gifPreviewUrl = mediaObject.tinygif
+      ? mediaObject.tinygif.url
+      : gifUrl;
+    const gifDiv = document.createElement("div");
+    gifDiv.className = "favorite-item";
+    gifDiv.innerHTML = `<img src="${gifPreviewUrl}" alt="${
+      gifData.content_description || "GIF"
+    }" loading="lazy">`;
+    gifDiv.onclick = () => {
+      let messageText = messageInput.value.trim();
+      let content = "";
+
+      if (messageText) {
+        content = `${messageText} ${gifUrl}`;
+      } else {
+        content = gifUrl;
+      }
+      const userAge = calculateAge(birthdayInput.value);
+      const payload = {
+        sender: myName,
+        content: content,
+        timestamp: new Date().toISOString(),
+        id: "msg-" + Date.now(),
+        age: userAge,
+      };
+      sendMessageToServer({
+        cmd: "gmsg",
+        val: JSON.stringify(payload),
+      });
+      displayMessage(payload, true, false);
+
+      messageInput.value = "";
+      gifPanel.classList.remove("active");
+    };
+    grid.appendChild(gifDiv);
+    addedGifUrls.add(gifUrl);
+  });
+  if (grid.children.length === 0) {
+    gifContent.innerHTML =
+      '<div class="favorites-empty-state"><span>Sonuç bulunamadı.</span></div>';
+  } else {
+    gifContent.appendChild(grid);
+  }
+}
+
+openGifBtn.addEventListener("click", () => {
+  gifPanel.classList.add("active");
+  actionsPopup.classList.remove("visible");
+  addButton.classList.remove("active");
+  favoritesPanel.classList.remove("active");
+  inboxPanel.classList.remove("active");
+  displayTenorLogo();
+  gifSearchInput.focus();
+});
+
+gifSearchInput.addEventListener("input", () => {
+  clearTimeout(gifSearchTimeout);
+  gifSearchTimeout = setTimeout(() => {
+    const searchTerm = gifSearchInput.value.trim();
+    if (searchTerm) {
+      searchGifs(searchTerm);
+    } else {
+      displayTenorLogo();
+    }
+  }, 300);
+});
+
+gifSearchInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    clearTimeout(gifSearchTimeout);
+    const searchTerm = gifSearchInput.value.trim();
+    if (searchTerm) {
+      searchGifs(searchTerm);
+    }
+  }
+});
+
+function displayTenorLogo() {
+  gifContent.innerHTML = `
+    <div class="gif-powered-by">
+      ${POWERED_BY_TENOR_SVG}
+    </div>
+  `;
 }
