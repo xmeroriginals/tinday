@@ -645,7 +645,7 @@ input[type="text"] {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.864);
+  background-color: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -734,7 +734,6 @@ input[type="text"] {
   height: auto;
   cursor: default;
   border-radius: 15px;
-  border: 2.7px solid var(--primary);
 }
 
 .message-file-container {
@@ -934,8 +933,8 @@ a.social-link i {
   justify-content: center;
   background: var(--card);
   box-shadow: var(--shadow);
-  z-index: 9999;
-  padding: 9px;
+  z-index: 9995;
+  padding: 7px;
   border-radius: var(--border-radius);
   font-size: 1.1rem;
   gap: 3px;
@@ -951,16 +950,19 @@ a.social-link i {
   border: none;
   font: inherit;
   color: inherit;
-  margin-left: 3.5px;
-  margin-right: 3.5px;
+  margin: 1.5px;
   background: var(--accent);
   color: var(--text-dark);
   border: none;
-  border-radius: 10px;
+  border-radius: 15px;
   padding: 9px;
   cursor: pointer;
   white-space: nowrap;
   transition: background-color 0.2s;
+  min-width: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  min-height: 40px;
 }
 
 @keyframes fadeInScale {
@@ -1040,6 +1042,7 @@ a.social-link i {
   height: 44px;
   border-radius: 50%;
   border: none;
+  margin: 1.5px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1698,16 +1701,6 @@ body[data-theme="dark"] .message-reply-container {
   #gifPanel.active {
     transform: translateX(-50%) translateY(0);
   }
-
-  #inbox-panel {
-    left: auto;
-    right: 0px;
-    transform: translateX(0) translateY(10px);
-    max-width: 350px;
-  }
-  #inbox-panel.active {
-    transform: translateX(0) translateY(0);
-  }
 }
 
 .gif-powered-by {
@@ -1730,4 +1723,243 @@ body[data-theme="dark"] .message-reply-container {
 .gif-powered-by path,
 .gif-powered-by text {
   fill: currentColor;
+}
+
+.settings-menu-back {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9997;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  padding: 1rem;
+}
+
+.settings-menu-back.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.settings-menu-content {
+  background-color: var(--card);
+  color: var(--text-dark);
+  padding: 1.5rem 2rem;
+  border-radius: var(--border-radius);
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+}
+
+.settings-menu-back.visible .settings-menu-content {
+  transform: scale(1);
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 1.3em;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.settings-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0 5px;
+  line-height: 1;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-item.vertical {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.settings-item label {
+  font-size: 0.95rem;
+  color: var(--text-dark);
+}
+
+.setting-options-group {
+  display: flex;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background-color: var(--mgs-input);
+}
+
+.option-btn {
+  flex: 1;
+  padding: 0.6rem 0.5rem;
+  background-color: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.option-btn:last-child {
+  border-right: none;
+}
+
+.option-btn:hover {
+  background-color: var(--accent);
+  color: var(--text-dark);
+}
+
+.option-btn.active {
+  background-color: var(--primary);
+  color: white;
+  font-weight: 500;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border);
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+input:checked + .slider {
+  background-color: var(--primary);
+}
+
+input:focus-visible + .slider {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.settings-action-button {
+  background-color: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.2rem;
+}
+
+.settings-action-button:hover {
+  background-color: var(--primary-dark);
+}
+
+.settings-icon-buttons-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.settings-icon-button {
+  background-color: var(--primary);
+  color: white;
+  border-radius: 25px;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.settings-icon-button:hover {
+  background-color: var(--primary-dark);
+}
+
+#settings-copyright {
+  position: absolute;
+  left: 50%;
+  bottom: -42px;
+  font-size: 13px;
+  opacity: 0.7;
+  transform: translateX(-50%);
+  width: 100%;
+  text-align: center;
+  color: #d2d2d2;
 }
