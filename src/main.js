@@ -4601,7 +4601,7 @@ function initializeSettingsMenu() {
             <!-- Ayar öğeleri buraya dinamik olarak eklenecek -->
         </div>
         <label id="settings-copyright">
-        <span>© 2025 TinDay ✕ TwinDay | Developed by Xmer™</span><br>
+        <span>© 2025 TinDay ✕ TwinDay | Managed by Xmer™</span><br>
         <span>Made with ❤️ and a little ☕</span>
         </label>
 
