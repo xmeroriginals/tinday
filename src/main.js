@@ -1176,6 +1176,13 @@ const handleSendMessage = async (event) => {
     return;
   }
 
+  const themeRegex = /^t\.(theme|thme)$/i;
+  if (themeRegex.test(messageText)) {
+    toggleTheme();
+    messageInput.value = "";
+    return;
+  }
+
   const createRoomRegex = /^t\.(createroom|cro)\s+([\s\S]+)/i;
   const createRoomMatch = messageText.match(createRoomRegex);
   if (createRoomMatch) {
@@ -1324,21 +1331,38 @@ const handleSendMessage = async (event) => {
 
   const clientCommandRegex = /\s*t\.(clear|clr|party|pty)\s*/gi;
   let hasClientCommand = false;
+
   let processedText = messageText
     .replace(clientCommandRegex, (match, cmd) => {
       hasClientCommand = true;
+
       switch (cmd.toLowerCase()) {
         case "clear":
         case "clr":
-          messagesContainer.innerHTML = "";
-          totalMessageCount = 0;
-          displaySystemNotification("Sohbet temizlendi.");
+          waitForSettingsMenuToHide().then(() => {
+            showModal({
+              title: "Dikkat",
+              message: `Bu sohbetteki mesajlar temizlenecek, Emin misiniz?`,
+              buttons: [
+                {
+                  id: "clearMessages",
+                  text: `Evet`,
+                  class: "confirm",
+                  disabled: false,
+                  onClick: chatClearConfirmed,
+                },
+                { text: "İptal", class: "cancel", onClick: hideModal },
+              ],
+            });
+          });
           break;
+
         case "party":
         case "pty":
           startConfetti();
           break;
       }
+
       return "";
     })
     .trim();
@@ -1373,6 +1397,26 @@ const handleSendMessage = async (event) => {
   });
   displayMessage(messagePayload, true, false);
 };
+
+async function waitForSettingsMenuToHide() {
+  const el = document.getElementById("settings-menu-back");
+  if (!el) return;
+  return new Promise((resolve) => {
+    function check() {
+      const opacity = parseFloat(getComputedStyle(el).opacity);
+      if (opacity < 0.1) return resolve();
+      requestAnimationFrame(check);
+    }
+    check();
+  });
+}
+
+function chatClearConfirmed() {
+  hideModal();
+  messagesContainer.innerHTML = "";
+  totalMessageCount = 0;
+  displaySystemNotification("Sohbet temizlendi.");
+}
 
 function formatTime(seconds) {
   const floorSeconds = Math.floor(seconds);
@@ -1472,16 +1516,13 @@ async function processMessageContent(content) {
   });
 
   const cmdEmgRegex =
-    /t\.(emg|emojimerge)\s+([\u00a9\u00ae\u2000-\u3300\ud83c\ud000-\udfff\ud83d\ud000-\udfff]+)/gi;
+    /t\.(e|emg|emojimerge)\s+([\u00a9\u00ae\u2000-\u3300\ud83c\ud000-\udfff\ud83d\ud000-\udfff]+)/gi;
   text = text.replace(cmdEmgRegex, (match, cmd, emojis) => {
     if (imageCount >= MAX_IMAGES_PER_MESSAGE) return match;
-
     const emojiChars = Array.from(emojis.trim());
     if (emojiChars.length < 2) return match;
-
     const mergeUrl = `https://emojik.vercel.app/s/${emojiChars[0]}_${emojiChars[1]}?size=128`;
     const hasSurroundingText = text.trim() !== match.trim();
-
     imageCount++;
     if (hasSurroundingText) {
       return `<img src="${mergeUrl}" alt="Birleşmiş Emoji" class="inline-emoji-merge">`;
@@ -1574,7 +1615,7 @@ const _renderMessageToDOM = async (
     const blockedMessageP = document.createElement("p");
     blockedMessageP.classList.add("message-content", "message-blocked");
     blockedMessageP.innerHTML =
-      "<i>Bu mesaj küfür içerdiğinden kaldırıldı, 't.antiswear' yazarak Küfür Filtresi'ni açıp/kapatabilirsiniz.</i>";
+      "<i>Bu mesaj küfür içerdiğinden kaldırıldı, Ayarlar üzerinden Küfür Filtresini kontrol edebilirsiniz.</i>";
     messageDiv.appendChild(blockedMessageP);
 
     messagesContainer.appendChild(messageDiv);
@@ -1841,25 +1882,7 @@ function displayHelpMessage() {
   messageDiv.appendChild(header);
 
   const commands = [
-    { cmd: "t.help", desc: "Yardım menüsünü gösterir." },
-    { cmd: "t.clear", alias: "t.clr", desc: "Sohbet ekranını temizler." },
-    {
-      cmd: "t.autologin",
-      alias: "t.aulg",
-      desc: "Otomatik girişi Açar veya Kapatır.",
-    },
-    { cmd: "t.peer2peer", alias: "t.p2p", desc: "P2P'ı Açar veya Kapatır." },
-    { cmd: "t.call", alias: " - ", desc: "Aramaları Açar veya Kapatır." },
-    {
-      cmd: "t.chatslower",
-      alias: "t.cslor",
-      desc: "Gelen mesajları yavaşlatır, 0-3s arasında değer girilebilir. Örneğin 't.chatslower 5'",
-    },
-    {
-      cmd: "t.inbox",
-      alias: "t.ibx",
-      desc: "Gelen Kutusunu Açar veya Kapatır.",
-    },
+    { cmd: "t.help", alias: " - ", desc: "Yardım menüsünü gösterir." },
     { cmd: "t.party", alias: "t.pty", desc: "Konfeti patlatır." },
     {
       cmd: "t.globalchat",
@@ -1883,7 +1906,7 @@ function displayHelpMessage() {
     },
     {
       cmd: "t.emojimerge <e1><e2>",
-      alias: "t.emg",
+      alias: "'t.emg' veya 't.e'",
       desc: "İki emojiyi birleştirir.",
     },
     {
@@ -1891,7 +1914,7 @@ function displayHelpMessage() {
       alias: "t.imgcrt",
       desc: "Yapay zeka ile resim oluşturur.",
     },
-    { cmd: "t.ai <prompt>", desc: "Yapay zekaya soru sorar." },
+    { cmd: "t.ai <prompt>", alias: " - ", desc: "Yapay zekaya soru sorar." },
   ];
 
   commands.forEach(({ cmd, alias, desc }) => {
@@ -2056,6 +2079,14 @@ document.addEventListener("keydown", (e) => {
 
   if (e.key === "Escape" && imagePreviewOverlay.classList.contains("visible")) {
     closeImagePreview();
+  }
+  const settingsMenuBack = document.getElementById("settings-menu-back");
+  if (
+    e.key === "Escape" &&
+    settingsMenuBack &&
+    settingsMenuBack.classList.contains("visible")
+  ) {
+    closeSettingsPopup();
   }
 
   if (e.ctrlKey && e.key.toLowerCase() === "f") {
@@ -2850,6 +2881,7 @@ messageForm.addEventListener("submit", handleSendMessage);
 cancelReplyBtn.addEventListener("click", cancelReply);
 
 addButton.addEventListener("click", (e) => {
+  positionPanels();
   e.stopPropagation();
   actionsPopup.classList.toggle("visible");
   addButton.classList.toggle("active");
@@ -2870,6 +2902,7 @@ fileInput.addEventListener("change", (e) => {
 });
 
 openFavoritesBtn.addEventListener("click", () => {
+  location.hash = "menu-favorites";
   renderFavoritesPanel();
   favoritesPanel.classList.add("active");
   actionsPopup.classList.remove("visible");
@@ -3002,7 +3035,7 @@ window.addEventListener("DOMContentLoaded", () => {
   applyTheme(savedTheme);
 });
 
-window.addEventListener("resize", checkScreenSize);
+window.addEventListener("resize", positionPanels, checkScreenSize);
 
 nameInput.addEventListener("input", checkFormValidity);
 birthdayInput.addEventListener("input", checkFormValidity);
@@ -3328,6 +3361,8 @@ function declineFileTransfer(transferId) {
 }
 
 inboxButton.addEventListener("click", (e) => {
+  positionPanels();
+  location.hash = "menu-inbox";
   e.stopPropagation();
   const isActive = inboxPanel.classList.toggle("active");
   if (isActive) {
@@ -4497,6 +4532,7 @@ function renderGifResults(gifs) {
 }
 
 openGifBtn.addEventListener("click", () => {
+  location.hash = "menu-gif";
   gifPanel.classList.add("active");
   actionsPopup.classList.remove("visible");
   addButton.classList.remove("active");
@@ -4535,4 +4571,228 @@ function displayTenorLogo() {
       ${POWERED_BY_TENOR_SVG}
     </div>
   `;
+}
+
+function positionPanels() {
+  const inputContainer = document.querySelector(".input-container");
+  const panels = document.querySelectorAll(
+    "#favoritesPanel, #inbox-panel, #gifPanel"
+  );
+  if (inputContainer && panels.length > 0) {
+    const inputContainerHeight = inputContainer.offsetHeight;
+    panels.forEach((panel) => {
+      panel.style.bottom = `${inputContainerHeight + 17}px`;
+    });
+  }
+}
+
+function initializeSettingsMenu() {
+  if (document.getElementById("settings-menu-back")) return;
+  const menuWrapper = document.createElement("div");
+  menuWrapper.id = "settings-menu-back";
+  menuWrapper.className = "settings-menu-back";
+  menuWrapper.innerHTML = `
+    <div class="settings-menu-content" id="settings-menu-content">
+        <div class="settings-header">
+            <h2>Ayarlar</h2>
+            <button id="close-settings-btn" class="settings-close-btn" title="Kapat">&times;</button>
+        </div>
+        <div class="settings-body" id="settings-body">
+            <!-- Ayar öğeleri buraya dinamik olarak eklenecek -->
+        </div>
+        <label id="settings-copyright">
+        <span>© 2025 TinDay ✕ TwinDay | Developed by Xmer™</span><br>
+        <span>Made with ❤️ and a little ☕</span>
+        </label>
+
+    </div>
+    
+  `;
+  document.body.appendChild(menuWrapper);
+  const closeBtn = document.getElementById("close-settings-btn");
+  closeBtn.addEventListener("click", closeSettingsPopup);
+  menuWrapper.addEventListener("click", (e) => {
+    if (e.target.id === "settings-menu-back") {
+      closeSettingsPopup();
+    }
+  });
+}
+
+function simulateCommand(command, shouldCloseMenu = false) {
+  const originalValue = messageInput.value;
+  messageInput.value = command;
+  messageForm.dispatchEvent(
+    new Event("submit", { bubbles: true, cancelable: true })
+  );
+  messageInput.value = originalValue;
+  if (shouldCloseMenu) {
+    setTimeout(closeSettingsPopup, 100);
+  }
+}
+
+function openSettingsPopup() {
+  initializeSettingsMenu();
+  const settingsBody = document.getElementById("settings-body");
+  settingsBody.innerHTML = "";
+  const createToggleSetting = (label, key, command) => {
+    const isEnabled = localStorage.getItem(key) !== "false";
+    const item = document.createElement("div");
+    item.className = "settings-item";
+    item.innerHTML = `
+        <label for="setting-${key}">${label}</label>
+        <label class="switch">
+            <input type="checkbox" id="setting-${key}" ${
+      isEnabled ? "checked" : ""
+    }>
+            <span class="slider round"></span>
+        </label>
+    `;
+    item.querySelector("input").addEventListener("change", () => {
+      simulateCommand(command, false);
+    });
+    return item;
+  };
+
+  const createIconButtonGroupSetting = (buttons) => {
+    const item = document.createElement("div");
+    item.className = "settings-item vertical";
+    item.innerHTML = `
+    <div class="settings-icon-buttons-group">
+      ${buttons
+        .map(
+          (btn) => `
+        <button class="action-btn settings-icon-button" title="${
+          btn.title || ""
+        }" data-command="${btn.command}" data-should-close="${
+            btn.shouldCloseMenu || false
+          }">
+          <i class="${btn.iconClass}"></i>
+        </button>
+      `
+        )
+        .join("")}
+    </div>
+  `;
+
+    item.querySelectorAll(".settings-icon-button").forEach((buttonEl) => {
+      buttonEl.addEventListener("click", () => {
+        const command = buttonEl.dataset.command;
+        const shouldClose = buttonEl.dataset.shouldClose === "true";
+        simulateCommand(command, shouldClose);
+      });
+    });
+    return item;
+  };
+
+  const createChatSlowerSetting = () => {
+    const currentValue =
+      Number(localStorage.getItem(CHAT_TIMEOUT_TIME_KEY)) || 0;
+    const item = document.createElement("div");
+    item.className = "settings-item vertical";
+    item.innerHTML = `
+        <label>Sohbet Yavaşlatma</label>
+        <div class="setting-options-group">
+            <button data-value="0" class="option-btn ${
+              currentValue === 0 ? "active" : ""
+            }">Kapalı</button>
+            <button data-value="1" class="option-btn ${
+              currentValue === 1 ? "active" : ""
+            }">1 sn</button>
+            <button data-value="2" class="option-btn ${
+              currentValue === 2 ? "active" : ""
+            }">2 sn</button>
+            <button data-value="3" class="option-btn ${
+              currentValue === 3 ? "active" : ""
+            }">3 sn</button>
+        </div>
+    `;
+    item.querySelectorAll(".option-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const value = btn.dataset.value;
+        simulateCommand(`t.cslor ${value}`, true);
+      });
+    });
+    return item;
+  };
+
+  settingsBody.appendChild(
+    createIconButtonGroupSetting([
+      {
+        iconClass: "fa-solid fa-circle-half-stroke",
+        title: "Tema",
+        command: "t.theme",
+        shouldCloseMenu: false,
+      },
+      {
+        iconClass: "fa-solid fa-broom",
+        title: "Sohbeti Temizle",
+        command: "t.clear",
+        shouldCloseMenu: true,
+      },
+      {
+        iconClass: "fa-solid fa-circle-question",
+        title: "Yardım Komutları",
+        command: "t.help",
+        shouldCloseMenu: true,
+      },
+    ])
+  );
+
+  settingsBody.appendChild(
+    createToggleSetting("P2P Bağlantısı", CALLS_ENABLED_KEY, "t.p2p")
+  );
+  settingsBody.appendChild(
+    createToggleSetting(
+      "Aramalar (P2P açık olmalı)",
+      CALLS_FEATURE_ENABLED_KEY,
+      "t.call"
+    )
+  );
+  settingsBody.appendChild(
+    createToggleSetting(
+      "Gelen Kutusu (P2P açık olmalı)",
+      INBOX_FEATURE_ENABLED_KEY,
+      "t.inbox"
+    )
+  );
+  const isAutoLoginEnabled =
+    localStorage.getItem(AUTOLOGIN_ENABLED_KEY) === "true";
+  const autoLoginItem = document.createElement("div");
+  autoLoginItem.className = "settings-item";
+  autoLoginItem.innerHTML = `
+      <label for="setting-autologin">Otomatik Giriş</label>
+      <label class="switch">
+          <input type="checkbox" id="setting-autologin" ${
+            isAutoLoginEnabled ? "checked" : ""
+          }>
+          <span class="slider round"></span>
+      </label>
+  `;
+  autoLoginItem.querySelector("input").addEventListener("change", () => {
+    simulateCommand("t.autologin", false);
+  });
+  settingsBody.appendChild(autoLoginItem);
+  settingsBody.appendChild(
+    createToggleSetting("Küfür Filtresi", ANTI_SWEAR_KEY, "t.antiswear")
+  );
+  settingsBody.appendChild(createChatSlowerSetting());
+  const settingsMenuBack = document.getElementById("settings-menu-back");
+  settingsMenuBack.style.visibility = "visible";
+  settingsMenuBack.classList.add("visible");
+}
+
+function closeSettingsPopup() {
+  const settingsMenuBack = document.getElementById("settings-menu-back");
+  if (settingsMenuBack) {
+    settingsMenuBack.classList.remove("visible");
+    settingsMenuBack.addEventListener(
+      "transitionend",
+      () => {
+        if (!settingsMenuBack.classList.contains("visible")) {
+          settingsMenuBack.style.visibility = "hidden";
+        }
+      },
+      { once: true }
+    );
+  }
 }
