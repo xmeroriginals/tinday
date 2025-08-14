@@ -3,19 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:large"
+    />
+    <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
     />
-
     <meta name="description" content="TinDay — Yeni Eşsiz Sosyal Deneyim." />
     <meta
       name="keywords"
       content="chatting, sohbet, online matching by birth date, birthday match dating, doğum günü uyum eşleşmesi, özgür sohbet platformu, kapsamlı doğum günü eşleşmeleri, çevrimiçi sohbet edip tanışma, güvenli arkadaşlık siteleri, özgür sohbet et güvenle kutla, özel doğum günü eşleşmeleri, doğum yılına göre eşleşme, sanal doğum günü partileri, doğum günü tabanlı eşleşme, güvenilir eşleşme platformu, kişisel eşleştirme hizmeti, çevrimiçi kutlama etkinlikleri, doğum gününe özel tanışma, online arkadaşlık hizmetleri, doğum gününe göre uyum, doğum günü mesajlaşma servisi, güvenli çevrimiçi sohbet, özgün doğum günü eşleşmeleri, özel günler için eşleştirme, sosyal etkileşim platformu, doğum gününe göre sohbet et, özel doğum günü kutlamaları, çevrimiçi arkadaş bulma, doğum günü odaklı sosyal ağ, çevrimiçi eşleşme hizmetleri, sanat etkinlikleri ile tanışma"
     />
-
     <meta name="author" content="TinDay Team" />
     <link rel="canonical" href="https://xmeroriginals.github.io/tinday/" />
-
     <meta property="og:title" content="TinDay | Eşleşin, Konuşun, Kutlayın!" />
     <meta
       property="og:description"
@@ -55,7 +56,6 @@
       type="image/png"
     />
     <link rel="manifest" href="src/manifest.json" />
-    <link rel="stylesheet" href="lib/powered-by.css" />
     <link rel="stylesheet" href="src/style.css" />
     <meta name="theme-color" content="#fc918c" id="themeColorMeta" />
     <title>TinDay | Sosyal</title>
@@ -73,6 +73,129 @@
       referrerpolicy="no-referrer"
     />
   </head>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://xmeroriginals.github.io/tinday/#org",
+          "name": "TinDay",
+          "alternateName": ["TwinDay"],
+          "url": "https://xmeroriginals.github.io/tinday/",
+          "logo": "https://xmeroriginals.github.io/tinday/assets/512x512.png",
+          "sameAs": [
+            "https://instagram.com/tindayofficial/",
+            "https://instagram.com/tindayofficial/"
+          ],
+          "contactPoint": [
+            {
+              "@type": "ContactPoint",
+              "contactType": "customer service",
+              "email": "tindayteam@gmail.com",
+              "areaServed": "Global",
+              "availableLanguage": ["Turkish", "English"]
+            },
+            {
+              "@type": "ContactPoint",
+              "contactType": "press inquiries",
+              "email": "tinday@execs.com",
+              "areaServed": "Global",
+              "availableLanguage": ["Turkish", "English"]
+            }
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://xmeroriginals.github.io/tinday/#website",
+          "url": "https://xmeroriginals.github.io/tinday/",
+          "name": "TinDay Sosyal",
+          "description": "TinDay | Doğum gününe göre eşleş. Özgürce sohbet et. Güvenle kutla. - Match by birthday. Chat freely. Celebrate safely.",
+          "inLanguage": "tr",
+          "about": {
+            "@type": "Thing",
+            "name": "Anonim Sosyal Ağ ve Arkadaşlık Platformu"
+          },
+          "publisher": {
+            "@id": "https://xmeroriginals.github.io/tinday/#org"
+          },
+          "creator": {
+            "@type": "Organization",
+            "name": "Xmer™",
+            "url": "https://xmeroriginals.github.io/"
+          },
+          "sameAs": [
+            "https://twitter.com/tinday",
+            "https://instagram.com/tinday"
+          ],
+          "contactPoint": [
+            {
+              "@type": "ContactPoint",
+              "contactType": "customer service",
+              "email": "tindayteam@gmail.com",
+              "availableLanguage": ["Turkish", "English"]
+            },
+            {
+              "@type": "ContactPoint",
+              "contactType": "press inquiries",
+              "email": "tinday@execs.com",
+              "availableLanguage": ["Turkish", "English"]
+            }
+          ],
+          "copyrightHolder": {
+            "@type": "Organization",
+            "name": "Xmer™"
+          },
+          "copyrightYear": "2025",
+          "potentialAction": {
+            "@type": "JoinAction",
+            "name": "TinDay'e Katıl",
+            "target": [
+              {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://xmeroriginals.github.io/tinday/",
+                "actionPlatform": [
+                  "http://schema.org/DesktopWebPlatform",
+                  "http://schema.org/MobileWebPlatform"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://xmeroriginals.github.io/tinday/#app",
+          "name": "TinDay",
+          "alternateName": "TwinDay",
+          "applicationCategory": "SocialNetworkingApplication",
+          "operatingSystem": "Web, Android, iOS",
+          "url": "https://xmeroriginals.github.io/tinday/",
+          "logo": "https://xmeroriginals.github.io/tinday/assets/512x512.png",
+          "image": "https://xmeroriginals.github.io/tinday/assets/TinDayThumb-with-Logo.png",
+          "description": "TinDay | Match by birthday. Chat freely. Celebrate safely.",
+          "author": { "@id": "https://xmeroriginals.github.io/tinday/#org" },
+          "publisher": { "@id": "https://xmeroriginals.github.io/tinday/#org" }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Uygulama",
+              "item": "https://xmeroriginals.github.io/tinday/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Hakkımızda",
+              "item": "https://xmeroriginals.github.io/tinday/about"
+            }
+          ]
+        }
+      ]
+    }
+  </script>
   <body>
     <div id="anonymous-login">
       <div class="login-container">
@@ -481,9 +604,5 @@
     <script src="lib/confetti.js"></script>
     <script src="lib/extras.js"></script>
     <script src="src/main.js"></script>
-    <script src="lib/powered-by.js"></script>
-    <script>
-      document.addEventListener("DOMContentLoaded", poweredByInit);
-    </script>
   </body>
 </html>
