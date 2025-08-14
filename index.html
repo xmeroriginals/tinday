@@ -14,7 +14,7 @@
     />
 
     <meta name="author" content="TinDay Team" />
-    <link rel="canonical" href="https://tinday.app.tc/" />
+    <link rel="canonical" href="https://xmeroriginals.github.io/tinday/" />
 
     <meta property="og:title" content="TinDay | Eşleşin, Konuşun, Kutlayın!" />
     <meta
@@ -23,14 +23,14 @@
     />
     <meta
       property="og:image"
-      content="https://tinday.app.tc/assets/twinday/TinDay-Logo.png"
+      content="https://xmeroriginals.github.io/tinday/assets/twinday/TinDay-Logo.png"
     />
-    <meta property="og:url" content="https://tinday.app.tc/" />
+    <meta property="og:url" content="https://xmeroriginals.github.io/tinday/" />
     <meta property="og:type" content="website" />
 
     <meta
       name="twitter:card"
-      content="https://tinday.app.tc/assets/twinday/TinDay-Logo.png"
+      content="https://xmeroriginals.github.io/tinday/assets/twinday/TinDay-Logo.png"
     />
     <meta name="twitter:title" content="TinDay | Eşleşin, Konuşun, Kutlayın!" />
     <meta
@@ -39,7 +39,7 @@
     />
     <meta
       name="twitter:image"
-      content="https://tinday.app.tc/assets/twinday/TinDay-Logo.png"
+      content="https://xmeroriginals.github.io/tinday/assets/twinday/TinDay-Logo.png"
     />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -47,14 +47,15 @@
     />
     <link
       rel="apple-touch-icon"
-      href="https://tinday.app.tc/assets/192x192.png"
+      href="https://xmeroriginals.github.io/tinday/assets/192x192.png"
     />
     <link
       rel="shortcut icon"
-      href="https://tinday.app.tc/assets/twinday/TinDayCircle-Logo.png"
+      href="https://xmeroriginals.github.io/tinday/assets/twinday/TinDayCircle-Logo.png"
       type="image/png"
     />
     <link rel="manifest" href="src/manifest.json" />
+    <link rel="stylesheet" href="lib/powered-by.css" />
     <link rel="stylesheet" href="src/style.css" />
     <meta name="theme-color" content="#fc918c" id="themeColorMeta" />
     <title>TinDay | Sosyal</title>
@@ -76,7 +77,7 @@
     <div id="anonymous-login">
       <div class="login-container">
         <img
-          src="https://tinday.app.tc/assets/twinday/TinDaySquare-Logo.png"
+          src="https://xmeroriginals.github.io/tinday/assets/twinday/TinDaySquare-Logo.png"
           alt="TinDay Logo"
           class="login-container__logo"
         />
@@ -120,13 +121,10 @@
     <div id="chat-screen">
       <header>
         <img
-          src="https://tinday.app.tc/assets/twinday/TinDaySquare-Logo.png"
+          src="https://xmeroriginals.github.io/tinday/assets/twinday/TinDaySquare-Logo.png"
           alt="TinDay Logo"
         />
         <div id="header-title">TinDay</div>
-        <a href="https://tinday.app.tc/about" class="about-button">
-          <i class="fa-solid fa-circle-question"></i>
-        </a>
         <a onclick="openSettingsPopup()" class="theme-button">
           <i class="fa-solid fa-gear"></i>
         </a>
@@ -178,6 +176,9 @@
               <i class="fa-solid fa-plus"></i>
             </button>
             <div class="actions-popup" id="actions-popup">
+              <button type="button" class="action-btn" id="openRoomHistory">
+                <i class="fa-solid fa-door-open"></i>
+              </button>
               <button type="button" class="action-btn" id="upload-file-btn">
                 <i class="fa-solid fa-paperclip"></i>
               </button>
@@ -239,26 +240,34 @@
       <audio
         id="outgoing-call-sound"
         loop
-        src="https://tinday.app.tc/assets/twinday/sounds/TinDay-IncomingCall.mp3"
+        src="https://xmeroriginals.github.io/tinday/assets/twinday/sounds/TinDay-IncomingCall.mp3"
       ></audio>
       <audio
         id="incoming-call-sound"
         loop
-        src="https://tinday.app.tc/assets/twinday/sounds/TinDay-IncomingCall.mp3"
+        src="https://xmeroriginals.github.io/tinday/assets/twinday/sounds/TinDay-IncomingCall.mp3"
         type="audio/mpeg"
       ></audio>
     </div>
 
     <div id="image-preview-overlay" class="image-preview-overlay">
-      <span id="image-preview-close" class="image-preview-close"
-        ><i class="fa-solid fa-xmark"></i
-      ></span>
-      <img
-        id="image-preview-content"
-        class="image-preview-content"
-        src=""
-        alt="Resim Önizleme"
-      />
+      <div class="image-preview-actions">
+        <button
+          id="image-preview-favorite"
+          class="image-preview-button"
+          title="Favorilere Ekle/Kaldır"
+        >
+          <i class="fa-regular fa-star"></i>
+        </button>
+        <button
+          id="image-preview-close"
+          class="image-preview-button"
+          title="Kapat"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <img id="image-preview-content" src="" alt="Resim Önizleme" />
     </div>
 
     <audio
@@ -308,44 +317,75 @@
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
         xmlns:xlink="http://www.w3.org/1999/xlink"
-        width="465.20364"
-        height="465.20364"
-        viewBox="0,0,465.20364,465.20364"
+        width="465.20365"
+        height="516.89295"
+        viewBox="0,0,465.20365,516.89295"
       >
-        <g transform="translate(-7.39818,52.60182)">
+        <g transform="translate(-7.39818,78.44648)">
           <g stroke-miterlimit="10">
             <path
-              d="M7.39818,180c0,-128.46244 104.13938,-232.60182 232.60182,-232.60182c128.46244,0 232.60182,104.13938 232.60182,232.60182c0,128.46244 -104.13938,232.60182 -232.60182,232.60182c-128.46244,0 -232.60182,-104.13938 -232.60182,-232.60182z"
-              fill="#fc0d00"
+              d="M7.39818,139.08015c0,-82.64162 0,-123.96177 9.75687,-137.86283c9.75662,-13.90107 48.60862,-27.2002 126.31287,-53.79874l14.80408,-5.06735c40.50581,-13.86514 60.75768,-20.79771 81.72802,-20.79771c20.97034,0 41.22219,6.93258 81.72852,20.79771l14.80382,5.06735c77.70452,26.59854 116.55677,39.89769 126.31313,53.79874c9.75635,13.90107 9.75634,55.22123 9.75634,137.86285c0,12.48038 0,26.0178 0,40.69757c0,145.71213 -109.55545,216.42566 -178.29188,246.45197c-18.64432,8.14366 -27.96649,12.21676 -54.30994,12.21676c-26.34344,0 -35.66562,-4.07311 -54.31097,-12.21676c-68.73643,-30.0263 -178.29084,-100.73984 -178.29084,-246.45197c0,-14.67977 0,-28.21719 0,-40.69757z"
+              fill="#e38932"
               stroke="none"
-              stroke-width="0.5"
+              stroke-width="1"
             />
-            <path
-              d="M217.25,272.88879c0,-12.56448 10.18552,-22.75 22.75,-22.75c12.56448,0 22.75,10.18552 22.75,22.75c0,12.56448 -10.18552,22.75 -22.75,22.75c-12.56448,0 -22.75,-10.18552 -22.75,-22.75z"
-              fill="#fcfcfc"
-              stroke="none"
-              stroke-width="0.5"
-            />
-            <g>
+            <g fill="#fcfcfc">
               <path
-                d="M217.25,213.16724c0,-12.56448 10.18552,-22.75 22.75,-22.75c12.56448,0 22.75,10.18552 22.75,22.75c0,12.56448 -10.18552,22.75 -22.75,22.75c-12.56448,0 -22.75,-10.18552 -22.75,-22.75z"
-                fill="#fcfcfc"
+                d="M267.7236,241.00406c-8.77314,-8.99434 -8.59383,-23.39772 0.40051,-32.17087c8.99434,-8.77314 23.39772,-8.59383 32.17087,0.40051c8.77314,8.99434 8.59383,23.39772 -0.40051,32.17087c-8.99434,8.77314 -23.39772,8.59383 -32.17087,-0.40051z"
                 stroke="none"
                 stroke-width="0.5"
               />
               <path
-                d="M217.25,87.11121c0,-12.56448 10.18552,-22.75 22.75,-22.75c12.56448,0 22.75,10.18552 22.75,22.75c0,12.56448 -10.18552,22.75 -22.75,22.75c-12.56448,0 -22.75,-10.18552 -22.75,-22.75z"
-                fill="#fcfcfc"
+                d="M179.70503,150.76629c-8.77314,-8.99434 -8.59383,-23.39772 0.40051,-32.17087c8.99434,-8.77314 23.39772,-8.59383 32.17087,0.40051c8.77314,8.99434 8.59383,23.39772 -0.40051,32.17087c-8.99434,8.77314 -23.39772,8.59383 -32.17087,-0.40051z"
                 stroke="none"
                 stroke-width="0.5"
               />
               <path
-                d="M217.25,213.16724v-126.05603h45.5v126.05603z"
-                fill="#fcfcfc"
+                d="M267.7236,241.00406l-88.01857,-90.23776l32.57138,-31.77036l88.01857,90.23776z"
                 stroke="#000000"
                 stroke-width="0"
               />
             </g>
+            <g fill="#fcfcfc">
+              <path
+                d="M180.10554,241.40457c-8.99434,-8.77314 -9.17365,-23.17652 -0.4005,-32.17086c8.77315,-8.99434 23.17652,-9.17365 32.17086,-0.40051c8.99434,8.77315 9.17365,23.17653 0.40051,32.17086c-8.77314,8.99434 -23.17653,9.17365 -32.17087,0.40051z"
+                stroke="none"
+                stroke-width="0.5"
+              />
+              <path
+                d="M268.12411,151.1668c-8.99434,-8.77314 -9.17366,-23.17652 -0.40051,-32.17086c8.77315,-8.99434 23.17653,-9.17365 32.17087,-0.40051c8.99434,8.77315 9.17365,23.17653 0.4005,32.17086c-8.77314,8.99434 -23.17652,9.17366 -32.17086,0.40051z"
+                stroke="none"
+                stroke-width="0.5"
+              />
+              <path
+                d="M179.70504,209.2337l88.01856,-90.23776l32.57137,31.77035l-88.01856,90.23777z"
+                stroke="#000000"
+                stroke-width="0"
+              />
+            </g>
+          </g>
+        </g>
+      </svg>
+    </template>
+    <template id="end-to-end-encryption-badge">
+      <svg
+        version="1.1"
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        width="465.20365"
+        height="516.89295"
+        viewBox="0,0,465.20365,516.89295"
+      >
+        <g transform="translate(-7.39818,78.44648)">
+          <g stroke="none" stroke-miterlimit="10">
+            <path
+              d="M7.39818,139.08015c0,-82.64162 0,-123.96177 9.75687,-137.86283c9.75662,-13.90107 48.60862,-27.2002 126.31287,-53.79874l14.80408,-5.06735c40.50581,-13.86514 60.75768,-20.79771 81.72802,-20.79771c20.97034,0 41.22219,6.93258 81.72852,20.79771l14.80382,5.06735c77.70452,26.59854 116.55677,39.89769 126.31313,53.79874c9.75635,13.90107 9.75634,55.22123 9.75634,137.86285c0,12.48038 0,26.0178 0,40.69757c0,145.71213 -109.55545,216.42566 -178.29188,246.45197c-18.64432,8.14366 -27.96649,12.21676 -54.30994,12.21676c-26.34344,0 -35.66562,-4.07311 -54.31097,-12.21676c-68.73643,-30.0263 -178.29084,-100.73984 -178.29084,-246.45197c0,-14.67977 0,-28.21719 0,-40.69757z"
+              fill="#28b82d"
+            />
+            <path
+              d="M166.16955,245.41003c-12.4955,-29.7243 -5.96221,-64.04233 16.58092,-87.09615v-35.56341c0,-31.61804 25.63149,-57.24953 57.24954,-57.24953c31.61804,0 57.24953,25.63149 57.24953,57.24953v35.56341c22.54312,23.05382 29.07641,57.37186 16.58092,87.09615c-12.4955,29.72429 -41.58652,49.06658 -73.83043,49.08902c-32.24392,-0.02244 -61.33495,-19.36473 -73.83044,-49.08902zM262.11951,196.86928c-2.68255,-10.01141 -11.75493,-16.97291 -22.11951,-16.97291c-10.36459,0 -19.43697,6.96149 -22.11952,16.97291c-2.68256,10.01142 1.69361,20.57644 10.66961,25.75873v26.07144c0,6.3236 5.12631,11.4499 11.44991,11.4499c6.3236,0 11.44991,-5.1263 11.44991,-11.4499v-26.07144c8.976,-5.18229 13.35216,-15.74731 10.66961,-25.75872zM205.65028,142.02066c21.71284,-10.42718 46.98659,-10.42718 68.69943,0v-19.27019c0,-18.97083 -15.37889,-34.34972 -34.34972,-34.34972c-18.97082,0 -34.34972,15.37889 -34.34972,34.34972z"
+              fill="#fcfcfc"
+            />
           </g>
         </g>
       </svg>
@@ -441,5 +481,9 @@
     <script src="lib/confetti.js"></script>
     <script src="lib/extras.js"></script>
     <script src="src/main.js"></script>
+    <script src="lib/powered-by.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", poweredByInit);
+    </script>
   </body>
 </html>
