@@ -1,0 +1,101 @@
+.snap-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--card);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+}
+
+.snap-scroller {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  padding: 10px;
+  padding-top: 13px;
+  gap: 15px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.snap-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.snap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--text-light);
+  font-size: 12px;
+  transition: transform 0.2s ease, width 0.3s ease;
+  padding: 3px;
+  background-color: var(--card);
+  height: 70px;
+  width: 70px;
+  border-radius: 50%;
+}
+
+.snap:hover {
+  transform: scale(1.05);
+}
+
+.snap img {
+  height: 64px;
+  width: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  transition: width 0.3s ease;
+}
+
+.snap.rectangular {
+  width: auto;
+  border-radius: 38px;
+}
+
+.snap.rectangular img {
+  width: auto;
+  border-radius: 32px;
+}
+
+.verified-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  z-index: 2;
+  margin: 5px;
+}
+
+.verified-badge svg {
+  width: 100%;
+  height: 100%;
+}
+
+.verified-text {
+  position: absolute;
+  top: -17px;
+  left: 0;
+  width: auto;
+  height: 24px;
+  z-index: 2;
+  margin: 5px;
+  font-size: 13px;
+  color: var(--powered-by);
+}
+
+.powered-by {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-light);
+  margin: 0;
+  padding-top: 17px;
+  position: relative;
+  top: -10px;
+}
