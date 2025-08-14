@@ -129,19 +129,19 @@ const declineCallBtn = document.getElementById("declineCallBtn");
 const outgoingCallSound = document.getElementById("outgoing-call-sound");
 const incomingCallSound = document.getElementById("incoming-call-sound");
 const notificationSound = new Audio(
-  "https://tinday.app.tc/assets/twinday/sounds/TinDay-Message.mp3"
+  "https://xmeroriginals.github.io/tinday/assets/twinday/sounds/TinDay-Message.mp3"
 );
 const notificationFocused = new Audio(
-  "https://tinday.app.tc/assets/twinday/sounds/TinDay-BGMessage.mp3"
+  "https://xmeroriginals.github.io/tinday/assets/twinday/sounds/TinDay-BGMessage.mp3"
 );
 const notificationVerified = new Audio(
-  "https://tinday.app.tc/assets/twinday/sounds/TinDay-VerifiedMessage.mp3"
+  "https://xmeroriginals.github.io/tinday/assets/twinday/sounds/TinDay-VerifiedMessage.mp3"
 );
 const messageSendSound = new Audio(
-  "https://tinday.app.tc/assets/twinday/sounds/TinDay-MessageSend.mp3"
+  "https://xmeroriginals.github.io/tinday/assets/twinday/sounds/TinDay-MessageSend.mp3"
 );
 const callEndSound = new Audio(
-  "https://tinday.app.tc/assets/twinday/sounds/TinDay-CallTimeoutAndRejected.mp3"
+  "https://xmeroriginals.github.io/tinday/assets/twinday/sounds/TinDay-CallTimeoutAndRejected.mp3"
 );
 
 const AUTOLOGIN_ENABLED_KEY = "tinday_autologin_enabled";
@@ -164,7 +164,7 @@ const BIRTHDAY_WISH_KEY_PREFIX = "tinday_birthday_wishes_";
 let isBirthdayToday = false;
 let birthdayCelebrationTimeout;
 const callSFX = [outgoingCallSound, incomingCallSound, callEndSound];
-const SHARE_BASE_URL = "https://tinday.app.tc/";
+const SHARE_BASE_URL = "https://xmeroriginals.github.io/tinday/";
 let originalBirthdayRoomName = "";
 let initialCustomRoomName = null;
 let socket = null;
@@ -1453,7 +1453,11 @@ function chatClearConfirmed() {
 
 function openAboutConfirmed() {
   hideModal();
-  window.open("https://tinday.app.tc/about", "_blank", "noopener,noreferrer");
+  window.open(
+    "https://xmeroriginals.github.io/tinday/about",
+    "_blank",
+    "noopener,noreferrer"
+  );
 }
 
 function formatTime(seconds) {
@@ -2122,7 +2126,8 @@ function parseNewsMessage(str) {
 }
 
 async function fetchAndDisplayNews() {
-  const baseUrl = "https://tinday.app.tc/news/twinday/tindaynews.txt";
+  const baseUrl =
+    "https://xmeroriginals.github.io/tinday/news/twinday/tindaynews.txt";
   const url = `${baseUrl}?t=${Date.now()}`;
   try {
     const response = await fetch(url, { cache: "no-store" });
@@ -3658,7 +3663,7 @@ function toggleInboxFeature() {
 
 async function getDiscordLink() {
   const dcCommunity = await fetch(
-    `https://tinday.app.tc/news/dc-community.txt`,
+    `https://xmeroriginals.github.io/tinday/news/dc-community.txt`,
     { cache: "no-store" }
   );
   if (!dcCommunity.ok) {
@@ -4321,7 +4326,7 @@ function updateSystemGroupUI(groupElement) {
 async function loadProfanityFilter() {
   try {
     const response = await fetch(
-      `https://tinday.app.tc/filter/profanityFilter/profanity.txt`
+      `https://xmeroriginals.github.io/tinday/filter/profanityFilter/profanity.txt`
     );
     if (!response.ok) {
       return;
