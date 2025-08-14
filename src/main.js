@@ -1,6 +1,9 @@
 const CL_SERVER_IP = "wss://cl.mikedev101.cc/";
 const OFFICIAL_BADGE_SVG = document.getElementById("official-badge").innerHTML;
 const AUTO_BLOCKER_SVG = document.getElementById("autoblocker-badge").innerHTML;
+const E2EE_SVG = document.getElementById(
+  "end-to-end-encryption-badge"
+).innerHTML;
 const POWERED_BY_TENOR_SVG =
   document.getElementById("powered-by-tenor").innerHTML;
 const LOCAL_STORAGE_KEY = "tinday_user_data";
@@ -146,6 +149,8 @@ const CALLS_FEATURE_ENABLED_KEY = "tinday_calls_feature_enabled";
 const INBOX_FEATURE_ENABLED_KEY = "tinday_inbox_feature_enabled";
 const ANTI_SWEAR_KEY = "tinday_anti_swear_enabled";
 const CHAT_TIMEOUT_TIME_KEY = "tinday_chat_timeout_time";
+const ROOM_HISTORY_KEY = "tinday_room_history";
+const MAX_ROOM_HISTORY = 11;
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 const CHUNK_SIZE = 64 * 1024;
 const p2pSpamTracker = new Map();
@@ -236,6 +241,7 @@ let touchStartTime = 0;
 let rafPending = false;
 const TENOR_API_KEY = "LIVDSRZULELA";
 let gifSearchTimeout;
+let hasBypassedPrivateIpWarning = false;
 
 function hideModal() {
   clearInterval(countdownInterval);
@@ -545,6 +551,11 @@ const handleConnect = (event) => {
   let name = nameInput.value.trim();
   name = DOMPurify.sanitize(name);
   const birthday = birthdayInput.value;
+
+  if (name === "DebugTinDay") {
+    isDebugMode = true;
+    console.log("Debug Mode Activated");
+  }
 
   if (!initialCustomRoomName) {
     saveUserData(name, birthday);
@@ -959,6 +970,14 @@ async function sendInboxMessage() {
     );
     return;
   }
+  const canProceed = await checkPublicIpAndWarn();
+  if (!canProceed) {
+    displaySystemNotification(
+      "Özel mesaj gönderimi kullanıcı tarafından iptal edildi.",
+      "info"
+    );
+    return;
+  }
 
   const targetRawId = targetUserIdForCall;
   if (!targetRawId) {
@@ -1329,19 +1348,17 @@ const handleSendMessage = async (event) => {
     messageText = imageUrl;
   }
 
-  const clientCommandRegex = /\s*t\.(clear|clr|party|pty)\s*/gi;
+  const clientCommandRegex = /\s*t\.(clear|clr|about|party|pty)\s*/gi;
   let hasClientCommand = false;
-
   let processedText = messageText
     .replace(clientCommandRegex, (match, cmd) => {
       hasClientCommand = true;
-
       switch (cmd.toLowerCase()) {
         case "clear":
         case "clr":
           waitForSettingsMenuToHide().then(() => {
             showModal({
-              title: "Dikkat",
+              title: "Uyarı",
               message: `Bu sohbetteki mesajlar temizlenecek, Emin misiniz?`,
               buttons: [
                 {
@@ -1356,13 +1373,29 @@ const handleSendMessage = async (event) => {
             });
           });
           break;
-
+        case "about":
+          waitForSettingsMenuToHide().then(() => {
+            showModal({
+              title: "Uyarı",
+              message: `Hakkımızda sayfasına geçiyorsunuz, Sohbetten ayrılmak üzeresiniz emin misiniz?`,
+              buttons: [
+                {
+                  id: "openAbout",
+                  text: `Evet`,
+                  class: "confirm",
+                  disabled: false,
+                  onClick: openAboutConfirmed,
+                },
+                { text: "İptal", class: "cancel", onClick: hideModal },
+              ],
+            });
+          });
+          break;
         case "party":
         case "pty":
           startConfetti();
           break;
       }
-
       return "";
     })
     .trim();
@@ -1416,6 +1449,11 @@ function chatClearConfirmed() {
   messagesContainer.innerHTML = "";
   totalMessageCount = 0;
   displaySystemNotification("Sohbet temizlendi.");
+}
+
+function openAboutConfirmed() {
+  hideModal();
+  window.open("https://tinday.app.tc/about", "_blank", "noopener,noreferrer");
 }
 
 function formatTime(seconds) {
@@ -1589,6 +1627,10 @@ const _renderMessageToDOM = async (
   isOfficial,
   isPrivate = false
 ) => {
+  const scrollThreshold = 50;
+  const wasScrolledToBottom =
+    messagesContainer.scrollHeight - messagesContainer.clientHeight <=
+    messagesContainer.scrollTop + scrollThreshold;
   const isFilterActive = localStorage.getItem(ANTI_SWEAR_KEY) !== "false";
   const hasProfanity =
     isFilterActive && !isSentByMe && containsProfanity(data.content || "");
@@ -1646,6 +1688,10 @@ const _renderMessageToDOM = async (
 
   if (isPrivate) {
     messageDiv.classList.add("message-private");
+    const e2eeBadgeDiv = document.createElement("div");
+    e2eeBadgeDiv.classList.add("official-badge");
+    e2eeBadgeDiv.innerHTML = E2EE_SVG;
+    messageDiv.appendChild(e2eeBadgeDiv);
   }
 
   if (isSentByMe) {
@@ -1661,7 +1707,7 @@ const _renderMessageToDOM = async (
     const header = document.createElement("strong");
     header.classList.add("message-header");
     if (isPrivate) {
-      header.textContent = `${displayName} | `;
+      header.textContent = `Uçtan Uca Şifreli ✦ ${displayName} |  `;
       const subtleNote = document.createElement("span");
       subtleNote.className = "subtle-note";
       subtleNote.textContent = "Bu mesajı sadece siz görebilirsiniz.";
@@ -1703,10 +1749,69 @@ const _renderMessageToDOM = async (
     );
     const replyContent = document.createElement("div");
     replyContent.className = "message-reply-content";
-    replyContent.textContent = truncateText(data.reply.originalContent, 100);
+    let replyContentText = data.reply.originalContent;
+    const hasProfanityInReply =
+      isFilterActive &&
+      !isSentByMe &&
+      containsProfanity(replyContentText || "");
+    if (hasProfanityInReply) {
+      replyContentText = "Yanıtlanan mesaj küfür içerdiğinden gizlendi.";
+    }
+    replyContent.textContent = truncateText(replyContentText, 100);
     replyContainer.append(replySender, replyContent);
     messageDiv.appendChild(replyContainer);
   }
+
+  const createImageWithLoader = (imageUrl, container, isFile = false) => {
+    container.classList.add("loading");
+    const loader = document.createElement("div");
+    loader.className = "image-loader";
+    container.appendChild(loader);
+
+    const img = document.createElement("img");
+    img.alt = "Gönderilen Resim";
+    img.className = "message-image";
+    img.loading = "lazy";
+
+    img.onload = () => {
+      container.classList.remove("loading");
+      loader.remove();
+      if (isSentByMe || wasScrolledToBottom) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    };
+    img.onerror = () => {
+      container.classList.remove("loading");
+      loader.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+    };
+
+    img.src = imageUrl;
+
+    imageObserver.observe(img);
+
+    if (!isFile) {
+      container.addEventListener("click", () => openImagePreview(imageUrl));
+      container.style.cursor = "pointer";
+    }
+
+    container.appendChild(img);
+    if (!isFile) {
+      const starButton = document.createElement("button");
+      starButton.className = "favorite-star-btn";
+      FavoritesDB.isFavorite(imageUrl).then((isFav) => {
+        starButton.classList.toggle("is-favorite", isFav);
+        starButton.innerHTML = isFav
+          ? `<i class="fa-solid fa-star"></i>`
+          : `<i class="fa-regular fa-star"></i>`;
+      });
+      starButton.onclick = (e) => {
+        e.stopPropagation();
+        if (window.getComputedStyle(starButton).opacity === "0") return;
+        toggleFavorite(imageUrl);
+      };
+      container.appendChild(starButton);
+    }
+  };
 
   for (const imageUrl of images) {
     const imgContainer = document.createElement("div");
@@ -1791,9 +1896,29 @@ const _renderMessageToDOM = async (
     } else if (ALLOWED_MIME_PATTERNS.image.test(type)) {
       const imgContainer = document.createElement("div");
       imgContainer.className = "message-image-container";
-      imgContainer.innerHTML = `<img src="${data_base64}" class="message-image" alt="${DOMPurify.sanitize(
-        name
-      )}" loading="lazy"/>`;
+
+      let imageUrlToUse = data_base64;
+      if (type === "image/svg+xml") {
+        try {
+          const dirtySvgText = decodeURIComponent(
+            atob(data_base64.split(",")[1] || "")
+          );
+          const cleanSvgText = DOMPurify.sanitize(dirtySvgText, {
+            USE_PROFILES: { svg: true },
+          });
+          imageUrlToUse =
+            "data:image/svg+xml;base64," +
+            btoa(unescape(encodeURIComponent(cleanSvgText)));
+        } catch (e) {
+          console.error("Image Error");
+        }
+      }
+
+      imgContainer.addEventListener("click", () =>
+        openImagePreview(imageUrlToUse)
+      );
+      imgContainer.style.cursor = "pointer";
+      createImageWithLoader(imageUrlToUse, imgContainer, true);
       messageDiv.appendChild(imgContainer);
     } else if (ALLOWED_MIME_PATTERNS.audio.test(type)) {
       messageDiv.appendChild(createCustomAudioPlayer(data_base64));
@@ -1833,7 +1958,9 @@ const _renderMessageToDOM = async (
     }
     messagesContainer.removeChild(messagesContainer.firstChild);
   }
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  if (isSentByMe || wasScrolledToBottom) {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
 };
 
 function blockUser(fullUserId) {
@@ -2089,6 +2216,15 @@ document.addEventListener("keydown", (e) => {
     closeSettingsPopup();
   }
 
+  const roomHistoryMenu = document.getElementById("room-history-menu-back");
+  if (
+    e.key === "Escape" &&
+    roomHistoryMenu &&
+    roomHistoryMenu.classList.contains("visible")
+  ) {
+    closeRoomHistoryPopup();
+  }
+
   if (e.ctrlKey && e.key.toLowerCase() === "f") {
     e.preventDefault();
 
@@ -2142,6 +2278,14 @@ document.addEventListener("keydown", (e) => {
       messageInput.focus();
     }
   }
+});
+
+document.getElementById("openRoomHistory").addEventListener("click", () => {
+  openRoomHistoryPopup();
+  actionsPopup.classList.remove("visible");
+  addButton.classList.remove("active");
+  favoritesPanel.classList.remove("active");
+  inboxPanel.classList.remove("active");
 });
 
 function showDownloadConfirmation(fileData) {
@@ -2214,7 +2358,7 @@ function showDownloadConfirmation(fileData) {
 
   showModal({
     title: "Dikkat",
-    message: `<code id="fileToDownload">${safeFileName}</code><br /><br />Tehlikeli olabilecek indirme, bu dosyayı indirmek istediğinizden emin misiniz?`,
+    message: `<code id="fileToDownload">${safeFileName}</code><br/>Tehlikeli olabilecek indirme, bu dosyayı indirmek istediğinizden emin misiniz?`,
     buttons: [
       {
         id: modalId,
@@ -2776,6 +2920,14 @@ async function initiateCall(targetRawId) {
     );
     return;
   }
+  const canProceed = await checkPublicIpAndWarn();
+  if (!canProceed) {
+    displaySystemNotification(
+      "Arama işlemi kullanıcı tarafından iptal edildi.",
+      "info"
+    );
+    return;
+  }
   if (!peer || peer.disconnected) {
     displaySystemNotification(
       "P2P bağlantısı aktif değil. Aramalar kapalı olabilir.",
@@ -2922,6 +3074,21 @@ document.addEventListener("paste", (e) => {
   }
 });
 
+document
+  .getElementById("image-preview-favorite")
+  .addEventListener("click", async (e) => {
+    const favoriteBtn = e.currentTarget;
+    const url = favoriteBtn.dataset.imageUrl;
+    if (!url) return;
+    await toggleFavorite(url);
+    const favoriteIcon = favoriteBtn.querySelector("i");
+    const isNowFavorite = await FavoritesDB.isFavorite(url);
+    favoriteIcon.className = isNowFavorite
+      ? "fa-solid fa-star"
+      : "fa-regular fa-star";
+    favoriteBtn.classList.toggle("is-favorite", isNowFavorite);
+  });
+
 document.addEventListener("click", (e) => {
   if (
     !favoritesPanel.contains(e.target) &&
@@ -3013,7 +3180,7 @@ messagesContainer.addEventListener("click", (e) => {
     });
     showModal({
       title: "Dış Bağlantı",
-      message: `<code>${safeUrl}</code><br/><br/>Bu site yeni bir sekmede açılacak. Emin misiniz?`,
+      message: `"<code>${safeUrl}</code>"<br/>Bu site yeni bir sekmede açılacak. Emin misiniz?`,
       buttons: [
         {
           text: "Evet",
@@ -3035,7 +3202,10 @@ window.addEventListener("DOMContentLoaded", () => {
   applyTheme(savedTheme);
 });
 
-window.addEventListener("resize", positionPanels, checkScreenSize);
+window.addEventListener("resize", function () {
+  checkScreenSize();
+  positionPanels();
+});
 
 nameInput.addEventListener("input", checkFormValidity);
 birthdayInput.addEventListener("input", checkFormValidity);
@@ -3069,6 +3239,14 @@ document.getElementById("sendInboxUser").addEventListener("click", () => {
 
 acceptCallBtn.addEventListener("click", async () => {
   if (!callControlConnection || acceptCallBtn.disabled) return;
+  const canProceed = await checkPublicIpAndWarn();
+  if (!canProceed) {
+    displaySystemNotification(
+      "Arama kabul işlemi kullanıcı tarafından iptal edildi.",
+      "info"
+    );
+    return;
+  }
   acceptCallBtn.disabled = true;
   acceptCallBtn.style.transition =
     "opacity 0.3s, width 0.3s, padding 0.3s, margin 0.3s";
@@ -3166,6 +3344,8 @@ function switchRoom(newRoomName, displayRoomName) {
     displaySystemNotification(`Zaten ${displayRoomName} odasındasınız.`);
     return;
   }
+
+  addRoomToHistory(newRoomName, displayRoomName);
 
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     displaySystemNotification(
@@ -4175,32 +4355,10 @@ function containsProfanity(text) {
   return profanityRegex.test(text);
 }
 
-function openImagePreview(imageUrl) {
+async function openImagePreview(imageUrl) {
   resetImageTransform();
   try {
     messageInput.disabled = true;
-    const urlObj = new URL(imageUrl);
-    const hostname = urlObj.hostname.replace(/^www\./, "");
-
-    const isTrusted = TRUSTED_IMAGE_DOMAINS.some((domain) =>
-      hostname.includes(domain)
-    );
-    const isPollinations = hostname.includes("image.pollinations.ai");
-    const isBase64 = imageUrl.startsWith("data:image/");
-
-    if (!isTrusted && !isPollinations && !isBase64) {
-      console.warn(
-        "Güvenilmeyen bir alandan resim önizlemesi engellendi:",
-        hostname
-      );
-      displaySystemNotification(
-        "Güvenlik nedeniyle bu resim önizlenemiyor.",
-        "error"
-      );
-      messageInput.disabled = false;
-      return;
-    }
-
     if (imageUrl.startsWith("data:image/svg+xml")) {
       const dirtySvgText = decodeURIComponent(
         atob(imageUrl.split(",")[1] || "")
@@ -4215,14 +4373,27 @@ function openImagePreview(imageUrl) {
     } else {
       imagePreviewContent.src = imageUrl;
     }
-
+    const favoriteBtn = document.getElementById("image-preview-favorite");
+    if (imagePreviewContent.src.startsWith("data:")) {
+      favoriteBtn.style.display = "none";
+    } else {
+      favoriteBtn.style.display = "flex";
+      const favoriteIcon = favoriteBtn.querySelector("i");
+      favoriteBtn.dataset.imageUrl = imageUrl;
+      const isFav = await FavoritesDB.isFavorite(imageUrl);
+      favoriteIcon.className = isFav
+        ? "fa-solid fa-star"
+        : "fa-regular fa-star";
+      favoriteBtn.classList.toggle("is-favorite", isFav);
+    }
     imagePreviewOverlay.classList.add("visible");
   } catch (e) {
-    console.error("Geçersiz resim URL'si:", imageUrl, e);
+    console.error("Resim görüntülenirken bir hata oluştu:", e);
     displaySystemNotification(
       "Resim görüntülenirken bir hata oluştu.",
       "error"
     );
+    messageInput.disabled = false;
   }
 }
 
@@ -4604,11 +4775,14 @@ function initializeSettingsMenu() {
         <span>© 2025 TinDay ✕ TwinDay | Managed by Xmer™</span><br>
         <span>Made with ❤️ and a little ☕</span>
         </label>
-
     </div>
-    
+    <footer class="snap-footer" id="snap-footer">
+      <p class="powered-by">Powered by</p>
+      <div class="snap-scroller" id="snap-container"></div>
+    </footer>
   `;
   document.body.appendChild(menuWrapper);
+
   const closeBtn = document.getElementById("close-settings-btn");
   closeBtn.addEventListener("click", closeSettingsPopup);
   menuWrapper.addEventListener("click", (e) => {
@@ -4616,6 +4790,19 @@ function initializeSettingsMenu() {
       closeSettingsPopup();
     }
   });
+
+  const ayncInit = async () => {
+    await new Promise((resolve) => {
+      if (typeof poweredByInit === "function") return resolve();
+      let s = document.createElement("script");
+      s.src = "lib/powered-by.js";
+      s.onload = resolve;
+      document.head.appendChild(s);
+    });
+    const settingsFooter = document.getElementById("settings-snap-footer");
+    poweredByInit(settingsFooter);
+  };
+  ayncInit();
 }
 
 function simulateCommand(command, shouldCloseMenu = false) {
@@ -4731,8 +4918,8 @@ function openSettingsPopup() {
       },
       {
         iconClass: "fa-solid fa-circle-question",
-        title: "Yardım Komutları",
-        command: "t.help",
+        title: "Hakkımızda",
+        command: "t.about",
         shouldCloseMenu: true,
       },
     ])
@@ -4777,8 +4964,12 @@ function openSettingsPopup() {
   );
   settingsBody.appendChild(createChatSlowerSetting());
   const settingsMenuBack = document.getElementById("settings-menu-back");
-  settingsMenuBack.style.visibility = "visible";
-  settingsMenuBack.classList.add("visible");
+  if (settingsMenuBack) {
+    settingsMenuBack.style.display = "flex";
+    requestAnimationFrame(() => {
+      settingsMenuBack.classList.add("visible");
+    });
+  }
 }
 
 function closeSettingsPopup() {
@@ -4789,7 +4980,259 @@ function closeSettingsPopup() {
       "transitionend",
       () => {
         if (!settingsMenuBack.classList.contains("visible")) {
-          settingsMenuBack.style.visibility = "hidden";
+          settingsMenuBack.style.display = "none";
+        }
+      },
+      { once: true }
+    );
+  }
+}
+
+function isPrivateIp(ip) {
+  if (!ip) return false;
+  const privateRanges = [
+    /^127\./,
+    /^10\./,
+    /^192\.168\./,
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+  ];
+  return privateRanges.some((regex) => regex.test(ip));
+}
+
+function getLocalIpViaWebRTC() {
+  return new Promise((resolve, reject) => {
+    if (typeof window.RTCPeerConnection === "undefined") {
+      return resolve(null);
+    }
+    const pc = new RTCPeerConnection({ iceServers: [] });
+    pc.createDataChannel("");
+    pc.createOffer().then(pc.setLocalDescription.bind(pc));
+
+    const handleCandidate = (ice) => {
+      if (ice && ice.candidate && ice.candidate.candidate) {
+        const ipMatch =
+          /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(
+            ice.candidate.candidate
+          );
+        if (ipMatch) {
+          pc.onicecandidate = null;
+          resolve(ipMatch[1]);
+        }
+      }
+    };
+    pc.onicecandidate = handleCandidate;
+    setTimeout(() => {
+      if (pc.onicecandidate) {
+        pc.onicecandidate = null;
+        resolve(null);
+      }
+    }, 500);
+  });
+}
+
+async function checkPublicIpAndWarn() {
+  if (hasBypassedPrivateIpWarning) {
+    return true;
+  }
+  try {
+    const localIp = await getLocalIpViaWebRTC();
+    if (!localIp || !isPrivateIp(localIp)) {
+      hasBypassedPrivateIpWarning = true;
+      return true;
+    }
+    return new Promise((resolve) => {
+      showModal({
+        title: "P2P Uyarısı",
+        message:
+          "IP adresiniz Genel bir ağa ait görünmüyor. Bu durum, bir VPN, Proxy veya Cloudflare WARP kullanmanızı önerdiğimiz anlamına gelir. Alternatif olarak, modem ayarlarınızı varsayılan hale getirerek genel bir IP alabilirsiniz.<br/><br/><b>Bu uyarıya rağmen devam etmek, yerel ağ bilgilerinizi ifşa edebilir veya bağlantı sorunlarına yol açabilir. Bu uyarıyı bu oturum boyunca tekrar görmeyeceksiniz.</b>",
+        buttons: [
+          {
+            text: "Yine de Devam Et",
+            class: "confirm",
+            onClick: () => {
+              hasBypassedPrivateIpWarning = true;
+              hideModal();
+              resolve(true);
+            },
+          },
+          {
+            text: "İptal Et",
+            class: "cancel",
+            onClick: () => {
+              hideModal();
+              resolve(false);
+            },
+          },
+        ],
+      });
+    });
+  } catch (error) {
+    console.warn(
+      "IP kontrolü sırasında hata oluştu, işleme devam ediliyor | ",
+      error
+    );
+    return true;
+  }
+}
+
+function getRoomHistory() {
+  try {
+    const rawHistory = localStorage.getItem(ROOM_HISTORY_KEY);
+    return rawHistory ? JSON.parse(rawHistory) : [];
+  } catch (e) {
+    console.error("Room History Error | ", e);
+    return [];
+  }
+}
+
+function saveRoomHistory(history) {
+  localStorage.setItem(ROOM_HISTORY_KEY, JSON.stringify(history));
+}
+
+function addRoomToHistory(roomName, displayName) {
+  let history = getRoomHistory();
+  if (history.length > 0 && history[0].roomName === roomName) {
+    return;
+  }
+  history = history.filter((item) => item.roomName !== roomName);
+  history.unshift({ roomName, displayName });
+  if (history.length > MAX_ROOM_HISTORY) {
+    history = history.slice(0, MAX_ROOM_HISTORY);
+  }
+  saveRoomHistory(history);
+}
+
+function clearRoomHistory() {
+  localStorage.removeItem(ROOM_HISTORY_KEY);
+}
+
+function initializeRoomHistoryMenu() {
+  if (document.getElementById("room-history-menu-back")) return;
+
+  const menuWrapper = document.createElement("div");
+  menuWrapper.id = "room-history-menu-back";
+  menuWrapper.className = "settings-menu-back";
+  menuWrapper.innerHTML = `
+    <div class="settings-menu-content" id="room-history-menu-content">
+        <div class="settings-header">
+            <h2>Geçmiş Oda Listesi</h2>
+            <button id="close-history-btn" class="settings-close-btn" title="Kapat">&times;</button>
+        </div>
+        <div class="settings-body" id="room-history-body">
+            <!-- Geçmiş oda listesi buraya dinamik olarak eklenecek -->
+        </div>
+        <div class="settings-footer">
+            <button id="clear-history-btn" class="action-btn clear-history-button">Geçmişi Temizle</button>
+        </div>
+    </div>
+  `;
+  document.body.appendChild(menuWrapper);
+
+  document
+    .getElementById("close-history-btn")
+    .addEventListener("click", closeRoomHistoryPopup);
+  menuWrapper.addEventListener("click", (e) => {
+    if (e.target.id === "room-history-menu-back") {
+      closeRoomHistoryPopup();
+    }
+  });
+
+  document.getElementById("clear-history-btn").addEventListener("click", () => {
+    const historyMenu = document.getElementById("room-history-menu-back");
+    const animationPromise = waitForRoomHistoryMenuToHide(historyMenu);
+    closeRoomHistoryPopup();
+    animationPromise.then(() => {
+      showModal({
+        title: "Emin misiniz?",
+        message: "Tüm oda geçmişiniz kalıcı olarak silinecek.",
+        buttons: [
+          {
+            text: "Evet",
+            class: "confirm",
+            onClick: () => {
+              clearRoomHistory();
+              hideModal();
+            },
+          },
+          {
+            text: "İptal",
+            class: "cancel",
+            onClick: () => {
+              openRoomHistoryPopup();
+              hideModal();
+            },
+          },
+        ],
+      });
+    });
+  });
+}
+
+async function waitForRoomHistoryMenuToHide() {
+  const el = document.getElementById("room-history-menu-back");
+  if (!el || !el.classList.contains("visible")) return;
+
+  return new Promise((resolve) => {
+    function check() {
+      const opacity = parseFloat(getComputedStyle(el).opacity);
+      if (opacity < 0.1) {
+        return resolve();
+      }
+      requestAnimationFrame(check);
+    }
+    check();
+  });
+}
+
+function openRoomHistoryPopup() {
+  initializeRoomHistoryMenu();
+
+  const historyBody = document.getElementById("room-history-body");
+  historyBody.innerHTML = "";
+
+  const history = getRoomHistory().reverse();
+
+  if (history.length === 0) {
+    historyBody.innerHTML = `
+      <div class="favorites-empty-state">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Oda geçmişiniz boş.</span>
+      </div>`;
+  } else {
+    const listContainer = document.createElement("div");
+    listContainer.className = "history-item-list";
+
+    history.forEach((room) => {
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "history-item";
+      itemDiv.innerHTML = `${room.displayName} <i class="fa-solid fa-reply"></i>`;
+      itemDiv.title = `"${room.displayName}" Odasına Geç`;
+
+      itemDiv.addEventListener("click", () => {
+        switchRoom(room.roomName, room.displayName);
+        closeRoomHistoryPopup();
+      });
+      listContainer.appendChild(itemDiv);
+    });
+    historyBody.appendChild(listContainer);
+  }
+
+  const menuBack = document.getElementById("room-history-menu-back");
+  menuBack.style.display = "flex";
+  requestAnimationFrame(() => {
+    menuBack.classList.add("visible");
+  });
+}
+
+function closeRoomHistoryPopup() {
+  const menuBack = document.getElementById("room-history-menu-back");
+  if (menuBack) {
+    menuBack.classList.remove("visible");
+    menuBack.addEventListener(
+      "transitionend",
+      () => {
+        if (!menuBack.classList.contains("visible")) {
+          menuBack.style.display = "none";
         }
       },
       { once: true }
