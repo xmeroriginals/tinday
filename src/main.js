@@ -150,7 +150,7 @@ const INBOX_FEATURE_ENABLED_KEY = "tinday_inbox_feature_enabled";
 const ANTI_SWEAR_KEY = "tinday_anti_swear_enabled";
 const CHAT_TIMEOUT_TIME_KEY = "tinday_chat_timeout_time";
 const ROOM_HISTORY_KEY = "tinday_room_history";
-const MAX_ROOM_HISTORY = 11;
+const MAX_ROOM_HISTORY = 33;
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 const CHUNK_SIZE = 64 * 1024;
 const p2pSpamTracker = new Map();
@@ -4756,8 +4756,14 @@ function positionPanels() {
   );
   if (inputContainer && panels.length > 0) {
     const inputContainerHeight = inputContainer.offsetHeight;
+    const safeAreaInset =
+      parseInt(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          "--safe-area-inset-bottom"
+        )
+      ) || 0;
     panels.forEach((panel) => {
-      panel.style.bottom = `${inputContainerHeight + 17}px`;
+      panel.style.bottom = `${inputContainerHeight + safeAreaInset + 17}px`;
     });
   }
 }
@@ -4781,10 +4787,6 @@ function initializeSettingsMenu() {
         <span>Made with ❤️ and a little ☕</span>
         </label>
     </div>
-    <footer class="snap-footer" id="snap-footer">
-      <p class="powered-by">Powered by</p>
-      <div class="snap-scroller" id="snap-container"></div>
-    </footer>
   `;
   document.body.appendChild(menuWrapper);
 
@@ -4795,19 +4797,6 @@ function initializeSettingsMenu() {
       closeSettingsPopup();
     }
   });
-
-  const ayncInit = async () => {
-    await new Promise((resolve) => {
-      if (typeof poweredByInit === "function") return resolve();
-      let s = document.createElement("script");
-      s.src = "lib/powered-by.js";
-      s.onload = resolve;
-      document.head.appendChild(s);
-    });
-    const settingsFooter = document.getElementById("settings-snap-footer");
-    poweredByInit(settingsFooter);
-  };
-  ayncInit();
 }
 
 function simulateCommand(command, shouldCloseMenu = false) {
