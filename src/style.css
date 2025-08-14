@@ -226,7 +226,6 @@ header img {
   color: var(--text-dark);
 }
 
-.about-button,
 .theme-button {
   position: absolute;
   right: 0.9rem;
@@ -247,17 +246,12 @@ header img {
   text-decoration: none;
 }
 
-.about-button:hover,
 .theme-button:hover {
   background-color: var(--primary-dark);
 }
 
-.theme-button {
-  right: 3.5rem;
-}
-
 #inbox-button {
-  right: 6.1rem;
+  right: 3.5rem;
 }
 
 #messages {
@@ -657,6 +651,9 @@ input[type="text"] {
 .modal-overlay.show {
   opacity: 1;
   visibility: visible;
+}
+#modalTitle {
+  margin-bottom: 9px;
 }
 .modal-content {
   background-color: var(--card);
@@ -1430,14 +1427,7 @@ body[data-theme="dark"] .message-reply-container {
   header i {
     font-size: 1.2rem;
   }
-  .about-button {
-    right: 0.8rem;
-    font-size: 0.9rem;
-    width: 30px;
-    height: 30px;
-  }
   .theme-button {
-    right: 3rem;
     font-size: 0.9rem;
     width: 30px;
     height: 30px;
@@ -1475,14 +1465,8 @@ body[data-theme="dark"] .message-reply-container {
     width: 30px;
     height: 30px;
   }
-  .about-button {
-    right: 0.8rem;
-  }
-  .theme-button {
-    right: 3rem;
-  }
   #inbox-button {
-    right: 5.2rem;
+    right: 3.1rem;
   }
 
   #inbox-panel {
@@ -1568,16 +1552,22 @@ body[data-theme="dark"] .message-reply-container {
   transform: scale(1);
 }
 
-.image-preview-close {
+.image-preview-actions {
   position: absolute;
   top: 15px;
-  right: 25px;
+  z-index: 1301;
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.image-preview-button {
+  position: absolute;
   color: white;
-  font-size: 23px;
   z-index: 9998;
   font-weight: bold;
   cursor: pointer;
-  background-color: var(--primary);
+  background-color: transparent;
   border: none;
   width: 45px;
   height: 45px;
@@ -1590,8 +1580,18 @@ body[data-theme="dark"] .message-reply-container {
   padding: 0;
 }
 
-.image-preview-close:hover {
-  background-color: var(--primary-dark);
+#image-preview-favorite .fa-solid.fa-star {
+  color: #f1c40f;
+}
+
+#image-preview-close {
+  font-size: 26px;
+  right: 15px;
+}
+
+#image-preview-favorite {
+  font-size: 23px;
+  left: 15px;
 }
 
 #favoritesPanel,
@@ -1752,6 +1752,8 @@ body[data-theme="dark"] .message-reply-container {
   color: var(--text-dark);
   padding: 1.5rem 2rem;
   border-radius: var(--border-radius);
+  position: absolute;
+  top: 15%;
   width: 100%;
   max-width: 400px;
   box-shadow: var(--shadow);
@@ -1962,4 +1964,96 @@ input:checked + .slider:before {
   width: 100%;
   text-align: center;
   color: #d2d2d2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.message-image-container.loading {
+  width: 150px;
+  height: 150px;
+  background-color: var(--message-received-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--message-border-radius, 12px);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.message-image-container.loading .message-image {
+  display: none;
+}
+
+.image-loader {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 4px solid var(--text-color-light);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.image-loader .fa-triangle-exclamation {
+  color: var(--error-color, #e74c3c);
+  font-size: 1.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.history-item-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.history-item {
+  padding: 0 0 10px 0;
+  border-bottom: 1px solid var(--border-color-light);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 1rem;
+  text-align: center;
+  text-decoration: underline;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.settings-footer {
+  padding: 10px 15px;
+  border-top: 1px solid var(--border-color-light);
+  display: flex;
+  justify-content: center;
+}
+
+.clear-history-button {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  width: 100%;
+  transition: background-color 0.2s ease;
+}
+
+.clear-history-button:hover {
+  background-color: var(--primary-dark);
 }
