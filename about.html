@@ -54,6 +54,7 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
+    <link rel="stylesheet" href="lib/powered-by.css" />
     <link rel="stylesheet" href="src/about.css" />
   </head>
   <body data-theme="light">
@@ -141,20 +142,42 @@
             </li>
             <li>
               <div>
-                <strong>3. P2P Güvenliği</strong>
-                P2P mesajlaşmada iki kullanıcı karşılıklı onay verirse, sistem
-                kullanıcıların IP adreslerini eşleştirir ve iletişim doğrudan
-                cihazdan cihaza olur. Bu sırada veriler uçtan uca şifrelenir.
-                Ancak IP adresiniz karşı tarafa iletilmiş olur. Tanımadığınız
-                kişilerden gelen mesaj, dosya ya da aramaları kabul etmemeniz
-                önerilir. *Eğer yinede güvenmediğiniz kişilerle
-                arama/konuşma/özel mesajlaşma yapmak istiyorsanız IP adresinizi
-                korumak adına kendi TURN gibi aracı servisleri kullanarak IP
-                adresinizi gizleyebilir ve güvenceye alabilirsiniz. TinDay
-                herhangi bir TURN sunucusu sağlamaz ve bu hizmetlerin
-                kullanımından sorumlu değildir.*
+                <strong>3. P2P Güvenliği ve IP Adresi Koruması</strong>
+                <p>
+                  P2P (Kişiden Kişiye) iletişimlerde (aramalar ve özel
+                  mesaj/dosya gönderimi gibi), iki kullanıcı arasında karşılıklı
+                  onay verildiğinde, veri alışverişi doğrudan sizin cihazınızla
+                  diğer kullanıcının cihazı arasında, uçtan uca şifrelenerek
+                  gerçekleşir.
+                </p>
+                <p>
+                  <strong>3. 1. Ek Güvenlik Önlemimiz</strong> Gizliliğinizi ve
+                  güvenliğinizi artırmak amacıyla, bir P2P bağlantısı kurulmadan
+                  önce sistemimiz ek bir kontrol gerçekleştirir. Sistem,
+                  bağlantı için kullanılacak IP adresinizin "genel" (public) bir
+                  IP olup olmadığını denetler. Eğer IP adresiniz özel bir ağa
+                  (örneğin 192.168.x.x gibi yerel bir ağ veya bazı mobil
+                  operatör ağları) ait görünüyorsa, bağlantı kurmadan önce sizi
+                  bir uyarı ekranıyla bilgilendiririz. Bu uyarı, hem yerel ağ
+                  bilgilerinizi yanlışlıkla paylaşmanızı önlemek hem de genel IP
+                  adresinizin karşı tarafa iletileceği konusunda farkındalık
+                  yaratmak amacıyla gösterilir.
+                </p>
+                <p>
+                  <strong>3. 2. Bu ek önleme rağmen</strong> P2P bağlantılarında
+                  genel IP adresinizin karşıdaki kullanıcı tarafından
+                  görülebileceğini unutmamanız önemlidir. Bu nedenle,
+                  tanımadığınız kişilerden gelen istekleri kabul ederken
+                  dikkatli olmanızı önemle tavsiye ederiz. Maksimum gizlilik
+                  için bir
+                  <strong>3. 3. VPN, Proxy veya Cloudflare WARP</strong> gibi
+                  servisler kullanarak genel IP adresinizi gizleyebilirsiniz.
+                  TinDay, bu harici hizmetlerin kullanımından veya P2P iletişimi
+                  sırasında paylaşılan bilgilerden sorumlu değildir.
+                </p>
               </div>
             </li>
+
             <li>
               <div>
                 <strong>4. Üçüncü Taraflar</strong>
@@ -175,6 +198,11 @@
       <div class="snap-scroller" id="snap-container"></div>
     </footer>
 
+    <script src="lib/powered-by.js"></script>
+    <script src="lib/extras.js"></script>
     <script src="src/about.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => poweredByInit());
+    </script>
   </body>
 </html>
