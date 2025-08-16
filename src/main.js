@@ -3250,6 +3250,7 @@ acceptCallBtn.addEventListener("click", async () => {
       "Arama kabul işlemi kullanıcı tarafından iptal edildi.",
       "info"
     );
+    hangupLogic(true);
     return;
   }
   acceptCallBtn.disabled = true;
@@ -3486,9 +3487,18 @@ function renderInboxPanel() {
   }
 }
 
-function acceptInboxItem(transferId) {
+async function acceptInboxItem(transferId) {
   const request = inboxRequests.get(transferId);
   if (!request) return;
+  const canProceed = await checkPublicIpAndWarn();
+  if (!canProceed) {
+    displaySystemNotification(
+      "Gelen kutusu öğesi kullanıcı tarafından reddedildi.",
+      "info"
+    );
+    declineFileTransfer(transferId);
+    return;
+  }
   const sanitizedSenderId = DOMPurify.sanitize(request.senderId, {
     USE_PROFILES: { html: false },
   });
@@ -4994,11 +5004,14 @@ function isPrivateIp(ip) {
 }
 
 function getLocalIpViaWebRTC() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (typeof window.RTCPeerConnection === "undefined") {
-      return resolve(null);
+      return resolve([]);
     }
+
     const pc = new RTCPeerConnection({ iceServers: [] });
+    const ips = new Set();
+
     pc.createDataChannel("");
     pc.createOffer().then(pc.setLocalDescription.bind(pc));
 
@@ -5009,18 +5022,16 @@ function getLocalIpViaWebRTC() {
             ice.candidate.candidate
           );
         if (ipMatch) {
-          pc.onicecandidate = null;
-          resolve(ipMatch[1]);
+          ips.add(ipMatch[1]);
         }
       }
     };
     pc.onicecandidate = handleCandidate;
     setTimeout(() => {
-      if (pc.onicecandidate) {
-        pc.onicecandidate = null;
-        resolve(null);
-      }
-    }, 500);
+      pc.onicecandidate = null;
+      pc.close();
+      resolve(Array.from(ips));
+    }, 1000);
   });
 }
 
@@ -5028,12 +5039,15 @@ async function checkPublicIpAndWarn() {
   if (hasBypassedPrivateIpWarning) {
     return true;
   }
+
   try {
-    const localIp = await getLocalIpViaWebRTC();
-    if (!localIp || !isPrivateIp(localIp)) {
+    const localIps = await getLocalIpViaWebRTC();
+    const hasPublicIp = localIps.some(ip => !isPrivateIp(ip));
+    if (localIps.length === 0 || hasPublicIp) {
       hasBypassedPrivateIpWarning = true;
       return true;
     }
+
     return new Promise((resolve) => {
       showModal({
         title: "P2P Uyarısı",
