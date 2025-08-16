@@ -242,6 +242,7 @@ let rafPending = false;
 const TENOR_API_KEY = "LIVDSRZULELA";
 let gifSearchTimeout;
 let hasBypassedPrivateIpWarning = false;
+let _cachedPublicIp = null;
 
 function hideModal() {
   clearInterval(countdownInterval);
@@ -4994,86 +4995,103 @@ function closeSettingsPopup() {
 
 function isPrivateIp(ip) {
   if (!ip) return false;
-  const privateRanges = [
+
+  if (ip.includes(":")) {
+    const lowerCaseIp = ip.toLowerCase();
+
+    if (lowerCaseIp === "::1") {
+      return true;
+    }
+
+    if (lowerCaseIp.startsWith("fc") || lowerCaseIp.startsWith("fd")) {
+      return true;
+    }
+
+    if (
+      lowerCaseIp.startsWith("fe8") ||
+      lowerCaseIp.startsWith("fe9") ||
+      lowerCaseIp.startsWith("fea") ||
+      lowerCaseIp.startsWith("feb")
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  const privateV4Ranges = [
     /^127\./,
     /^10\./,
     /^192\.168\./,
     /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+    /^169\.254\./,
   ];
-  return privateRanges.some((regex) => regex.test(ip));
+
+  return privateV4Ranges.some((regex) => regex.test(ip));
 }
 
-function getLocalIpViaWebRTC() {
-  return new Promise((resolve) => {
-    if (typeof window.RTCPeerConnection === "undefined") {
-      return resolve([]);
+async function getPublicIp() {
+  if (_cachedPublicIp) {
+    return _cachedPublicIp;
+  }
+
+  try {
+    const response = await fetch("https://api.ipify.org?format=json");
+    if (!response.ok) {
+      console.error("IPify API'sinden yanıt alınamadı.");
+      return null;
     }
-
-    const pc = new RTCPeerConnection({ iceServers: [] });
-    const ips = new Set();
-
-    pc.createDataChannel("");
-    pc.createOffer().then(pc.setLocalDescription.bind(pc));
-
-    const handleCandidate = (ice) => {
-      if (ice && ice.candidate && ice.candidate.candidate) {
-        const ipMatch =
-          /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(
-            ice.candidate.candidate
-          );
-        if (ipMatch) {
-          ips.add(ipMatch[1]);
-        }
-      }
-    };
-    pc.onicecandidate = handleCandidate;
-    setTimeout(() => {
-      pc.onicecandidate = null;
-      pc.close();
-      resolve(Array.from(ips));
-    }, 1000);
-  });
+    const data = await response.json();
+    const ip = data.ip;
+    _cachedPublicIp = ip;
+    return ip;
+  } catch (error) {
+    console.error("Public IP alınırken bir ağ hatası oluştu:", error);
+    return null;
+  }
 }
 
 async function checkPublicIpAndWarn() {
   if (hasBypassedPrivateIpWarning) {
     return true;
   }
-
   try {
-    const localIps = await getLocalIpViaWebRTC();
-    const hasPublicIp = localIps.some(ip => !isPrivateIp(ip));
-    if (localIps.length === 0 || hasPublicIp) {
+    const publicIp = await getPublicIp();
+    if (!publicIp) {
+      console.warn("Public IP adresi doğrulanamadı, işleme devam ediliyor.");
+      return true;
+    }
+    if (isPrivateIp(publicIp)) {
+      return new Promise((resolve) => {
+        showModal({
+          title: "P2P Uyarısı",
+          message:
+            "Ağ yapılandırmanız, genel internete özel bir IP adresiyle çıktığınızı gösteriyor. Bu durum, genellikle kurumsal bir ağda veya özel bir VPN yapılandırmasında görülür.<br/><br/><b>Devam etmek, P2P bağlantı sorunlarına yol açabilir veya ağ bilgilerinizi ifşa edebilir. Bu uyarıyı bu oturum boyunca tekrar görmeyeceksiniz.</b>",
+          buttons: [
+            {
+              text: "Yine de Devam Et",
+              class: "confirm",
+              onClick: () => {
+                hasBypassedPrivateIpWarning = true;
+                hideModal();
+                resolve(true);
+              },
+            },
+            {
+              text: "İptal Et",
+              class: "cancel",
+              onClick: () => {
+                hideModal();
+                resolve(false);
+              },
+            },
+          ],
+        });
+      });
+    } else {
       hasBypassedPrivateIpWarning = true;
       return true;
     }
-
-    return new Promise((resolve) => {
-      showModal({
-        title: "P2P Uyarısı",
-        message:
-          "IP adresiniz Genel bir ağa ait görünmüyor. Bu durum, bir VPN, Proxy veya Cloudflare WARP kullanmanızı önerdiğimiz anlamına gelir. Alternatif olarak, modem ayarlarınızı varsayılan hale getirerek genel bir IP alabilirsiniz.<br/><br/><b>Bu uyarıya rağmen devam etmek, yerel ağ bilgilerinizi ifşa edebilir veya bağlantı sorunlarına yol açabilir. Bu uyarıyı bu oturum boyunca tekrar görmeyeceksiniz.</b>",
-        buttons: [
-          {
-            text: "Yine de Devam Et",
-            class: "confirm",
-            onClick: () => {
-              hasBypassedPrivateIpWarning = true;
-              hideModal();
-              resolve(true);
-            },
-          },
-          {
-            text: "İptal Et",
-            class: "cancel",
-            onClick: () => {
-              hideModal();
-              resolve(false);
-            },
-          },
-        ],
-      });
-    });
   } catch (error) {
     console.warn(
       "IP kontrolü sırasında hata oluştu, işleme devam ediliyor | ",
