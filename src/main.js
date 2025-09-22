@@ -1,3 +1,11 @@
+window.addEventListener("load", () => {
+  const loader = document.getElementById("loader");
+  setTimeout(() => {
+    loader.style.opacity = "0";
+    loader.style.visibility = "hidden";
+  }, 777);
+});
+
 const CL_SERVER_IP = "wss://cl.mikedev101.cc/";
 const OFFICIAL_BADGE_SVG = document.getElementById("official-badge").innerHTML;
 const AUTO_BLOCKER_SVG = document.getElementById("autoblocker-badge").innerHTML;
@@ -5046,7 +5054,7 @@ async function getPublicIp() {
     _cachedPublicIp = ip;
     return ip;
   } catch (error) {
-    console.error("Public IP alınırken bir ağ hatası oluştu:", error);
+    console.error("Public IP alınırken bir ağ hatası oluştu | ", error);
     return null;
   }
 }
