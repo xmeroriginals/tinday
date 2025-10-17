@@ -2097,5 +2097,4 @@ input:checked + .slider:before {
   position: relative;
   bottom: 4px;
   opacity: 0.3;
-  top: -11px;
 }
