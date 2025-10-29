@@ -1,0 +1,28 @@
+[
+  {
+    "imageUrl": "powered-by/Powered-by-CloudLinkV4.png",
+    "redirectUrl": "https://github.com/MikeDev101/cloudlink"
+  },
+  {
+    "imageUrl": "powered-by/Powered-by-XmerOriginals.png",
+    "redirectUrl": "https://www.instagram.com/xmerofficial/",
+    "verified": true
+  },
+  {
+    "imageUrl": "powered-by/Powered-by-ElevenLabs.png",
+    "redirectUrl": "https://elevenlabs.io/"
+  },
+  {
+    "imageUrl": "powered-by/Powered-by-Hkb44.png",
+    "redirectUrl": "https://hasankb.netlify.app/",
+    "verified": true
+  },
+  {
+    "imageUrl": "powered-by/Powered-by-Tenor.png",
+    "redirectUrl": "https://tenor.com/"
+  },
+  {
+    "imageUrl": "powered-by/Powered-by-Giphy.png",
+    "redirectUrl": "https://giphy.com/"
+  }
+]

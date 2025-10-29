@@ -1,0 +1,24 @@
+{
+  "name": "TinDay",
+  "short_name": "TinDay",
+  "description": "Eşleşin, Konuşun, Kutlayın!",
+  "lang": "tr",
+  "start_url": "https://tinday.xmeroriginals.com/",
+  "scope": "https://tinday.xmeroriginals.com/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#e4746f",
+  "background_color": "#fab2ab",
+  "icons": [
+    {
+      "src": "https://tinday.xmeroriginals.com/resources/192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://tinday.xmeroriginals.com/resources/512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
