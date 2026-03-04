@@ -1,1 +1,1 @@
-["content${Sevgili TinDay Kullanıcıları, Admin, Moderatör, Yetkili gibi isimlerle giriş yapanlara aldırış etmeyiniz. Sorunuz olursa çekinmeden [IG] veya [DC] üzerinden bize ulaşabilirsiniz.}$ sender${Official TinDay Team}$ datetime${18.07.2025 04.00}$"]
+["content${Sevgili TinDay Kullanıcıları, Admin, Moderatör, Yetkili gibi isimlerle giriş yapanlara aldırış etmeyiniz. Sorunuz olursa çekinmeden [IG] üzerinden bize ulaşabilirsiniz.}$ sender${Official TinDay Team}$ datetime${18.07.2025 04.00}$"]
