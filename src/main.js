@@ -137,19 +137,19 @@ const declineCallBtn = document.getElementById("declineCallBtn");
 const outgoingCallSound = document.getElementById("outgoing-call-sound");
 const incomingCallSound = document.getElementById("incoming-call-sound");
 const notificationSound = new Audio(
-  "https://tinday.xmeroriginals.com/resources/twinday/sounds/TinDay-Message.mp3"
+  "https://tinday.xmeroriginals.com/assets/twinday/sounds/TinDay-Message.mp3"
 );
 const notificationFocused = new Audio(
-  "https://tinday.xmeroriginals.com/resources/twinday/sounds/TinDay-BGMessage.mp3"
+  "https://tinday.xmeroriginals.com/assets/twinday/sounds/TinDay-BGMessage.mp3"
 );
 const notificationVerified = new Audio(
-  "https://tinday.xmeroriginals.com/resources/twinday/sounds/TinDay-VerifiedMessage.mp3"
+  "https://tinday.xmeroriginals.com/assets/twinday/sounds/TinDay-VerifiedMessage.mp3"
 );
 const messageSendSound = new Audio(
-  "https://tinday.xmeroriginals.com/resources/twinday/sounds/TinDay-MessageSend.mp3"
+  "https://tinday.xmeroriginals.com/assets/twinday/sounds/TinDay-MessageSend.mp3"
 );
 const callEndSound = new Audio(
-  "https://tinday.xmeroriginals.com/resources/twinday/sounds/TinDay-CallTimeoutAndRejected.mp3"
+  "https://tinday.xmeroriginals.com/assets/twinday/sounds/TinDay-CallTimeoutAndRejected.mp3"
 );
 
 const AUTOLOGIN_ENABLED_KEY = "tinday_autologin_enabled";
@@ -1061,8 +1061,7 @@ async function sendInboxMessage() {
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
     displaySystemNotification(
-      `Dosya boyutu çok büyük. Maksimum ${
-        MAX_FILE_SIZE_BYTES / 1024 / 1024
+      `Dosya boyutu çok büyük. Maksimum ${MAX_FILE_SIZE_BYTES / 1024 / 1024
       }MB.`,
       "error"
     );
@@ -1076,47 +1075,41 @@ async function sendInboxMessage() {
 
   conn.on("open", () => {
     const transferId = "transfer-" + Date.now() + Math.random();
-    const fileReader = new FileReader();
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
-    fileReader.onload = (e) => {
-      const base64Data = e.target.result;
-      const totalChunks = Math.ceil(base64Data.length / CHUNK_SIZE);
-      conn.send({
-        type: "file-transfer-start",
-        transferId: transferId,
-        senderId: myName,
-        age: userAge,
-        fileInfo: {
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          totalChunks: totalChunks,
-        },
-      });
+    conn.send({
+      type: "file-transfer-start",
+      transferId: transferId,
+      senderId: myName,
+      age: userAge,
+      fileInfo: {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        totalChunks: totalChunks,
+      },
+    });
 
+    const sendChunks = async () => {
       for (let i = 0; i < totalChunks; i++) {
-        const chunk = base64Data.substring(
-          i * CHUNK_SIZE,
-          (i + 1) * CHUNK_SIZE
-        );
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(file.size, start + CHUNK_SIZE);
+        const chunkBlob = file.slice(start, end);
+        const arrayBuffer = await chunkBlob.arrayBuffer();
+
         conn.send({
           type: "file-chunk",
           transferId: transferId,
           chunkIndex: i,
-          data: chunk,
+          data: arrayBuffer,
         });
       }
-
       conn.send({ type: "file-transfer-end", transferId: transferId });
       displaySystemNotification(`${file.name} gönderildi.`, "info");
+      setTimeout(() => conn.close(), 1000);
     };
 
-    fileReader.onerror = () => {
-      displaySystemNotification("Dosya okunurken bir hata oluştu.", "error");
-      conn.close();
-    };
-
-    fileReader.readAsDataURL(file);
+    sendChunks();
   });
 
   conn.on("error", (err) => {
@@ -1286,8 +1279,7 @@ const handleSendMessage = async (event) => {
 
     if (oldTimer === reTimer) {
       displaySystemNotification(
-        `Sohbet yavaşlatması ${
-          reTimer === 0 ? "kapatıldı." : `${oldTimer} saniye değiştirilmedi.`
+        `Sohbet yavaşlatması ${reTimer === 0 ? "kapatıldı." : `${oldTimer} saniye değiştirilmedi.`
         }`
       );
       return;
@@ -1494,8 +1486,9 @@ async function processMessageContent(content) {
     try {
       const urlObj = new URL(url);
       const hostname = urlObj.hostname.replace(/^www\./, "");
+      const isTrustedAudio = TRUSTED_AUDIO_DOMAINS.some((domain) => hostname === domain || hostname.endsWith("." + domain));
       if (
-        TRUSTED_AUDIO_DOMAINS.some((domain) => hostname.includes(domain)) &&
+        isTrustedAudio &&
         audioCount < MAX_AUDIOS_PER_MESSAGE
       ) {
         audioUrls.push(url);
@@ -1540,8 +1533,9 @@ async function processMessageContent(content) {
         imageCount++;
         gifPreviewed = true;
         return "";
-      } else if (
-        TRUSTED_IMAGE_DOMAINS.some((domain) => hostname.includes(domain)) &&
+      } const isTrustedImage = TRUSTED_IMAGE_DOMAINS.some((domain) => hostname === domain || hostname.endsWith("." + domain));
+      if (
+        isTrustedImage &&
         imageCount < MAX_IMAGES_PER_MESSAGE
       ) {
         imageUrls.push(url);
@@ -1944,8 +1938,8 @@ const _renderMessageToDOM = async (
                       <i class="fa-solid fa-file message-file-icon"></i>
                       <div class="message-file-info">
                           <span class="message-file-name">${DOMPurify.sanitize(
-                            name
-                          )}</span>
+        name
+      )}</span>
                           <button class="message-file-download-btn">İndir</button>
                       </div>`;
       fileContainer.querySelector(".message-file-download-btn").onclick = () =>
@@ -2061,9 +2055,8 @@ function displayHelpMessage() {
     const p = document.createElement("p");
     p.classList.add("message-content");
     p.style.margin = "4px 0";
-    p.innerHTML = `<span style="font-weight:bold;">${cmd}</span> ${
-      alias ? `(${alias})` : ""
-    } | ${desc}`;
+    p.innerHTML = `<span style="font-weight:bold;">${cmd}</span> ${alias ? `(${alias})` : ""
+      } | ${desc}`;
     messageDiv.appendChild(p);
   });
 
@@ -2696,14 +2689,17 @@ async function handleIncomingData(data, senderPeerId) {
       if (
         finishedTransfer &&
         finishedTransfer.receivedChunks ===
-          finishedTransfer.fileInfo.totalChunks
+        finishedTransfer.fileInfo.totalChunks
       ) {
         try {
-          const fileContent = finishedTransfer.chunks.join("");
+          const blob = new Blob(finishedTransfer.chunks, {
+            type: finishedTransfer.fileInfo.type,
+          });
+          const blobUrl = URL.createObjectURL(blob);
           const fullFilePayload = {
             name: finishedTransfer.fileInfo.name,
             type: finishedTransfer.fileInfo.type,
-            data_base64: fileContent,
+            data_base64: blobUrl,
           };
           const requestData = {
             transferId: data.transferId,
@@ -2767,6 +2763,12 @@ function initializePeerEvents(p) {
 
   p.on("error", (err) => {
     console.error("PeerJS Error", err.type);
+    if (err.type === "network") {
+      displaySystemNotification(
+        "P2P ağ hatası: Muhtemelen bir firewall veya STUN engeli mevcut. Özel özellikler kullanılamaz.",
+        "error"
+      );
+    }
     if (err.type === "peer-unavailable" && (isCallActive || isCleaningUp)) {
       displaySystemNotification(
         "Kullanıcı bulunamadı, çevrimdışı veya P2P'e kapalı.",
@@ -2822,7 +2824,6 @@ function initializePeerEvents(p) {
           showCallPanel(callerDisplayName, false);
         } else if (data.type === "hangup") {
           hangupLogic(false);
-          _LOGIC_;
         }
       });
 
@@ -3038,7 +3039,18 @@ function initializePeerConnection() {
     return;
   }
   console.log("Peer Connecting...");
-  peer = new Peer(myPeerId, { debug: 0 });
+  peer = new Peer(myPeerId, {
+    debug: 0,
+    config: {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun4.l.google.com:19302" },
+      ],
+    },
+  });
   initializePeerEvents(peer);
 }
 
@@ -3201,7 +3213,7 @@ messagesContainer.addEventListener("click", (e) => {
           class: "confirm",
           onClick: () => {
             if (urlToOpen)
-              window.open(urlToOpen, "_blank", "noopener,noreferrer");
+              window.open(safeUrl, "_blank", "noopener,noreferrer");
             hideModal();
           },
         },
@@ -3462,9 +3474,9 @@ function renderInboxPanel() {
           20
         )}</strong>
                     <span class="inbox-item-file">${truncateText(
-                      fileName,
-                      25
-                    )}</span>
+          fileName,
+          25
+        )}</span>
                   </div>`;
       } else if (req.content) {
         const messagePreview = DOMPurify.sanitize(req.content, {
@@ -3477,9 +3489,9 @@ function renderInboxPanel() {
           20
         )} size özel bir mesaj gönderdi.</strong>
                     <span class="inbox-item-file">${truncateText(
-                      messagePreview,
-                      35
-                    )}</span>
+          messagePreview,
+          35
+        )}</span>
                   </div>`;
       }
 
@@ -4030,7 +4042,7 @@ function triggerSameDayCelebration(roomName, userBirthdate) {
   let message = "";
   const randomGif =
     RANDOM_BIRTHDAY_GIFS[
-      Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
+    Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
     ];
 
   if (timeSinceMidnight <= threeHoursInMs) {
@@ -4062,7 +4074,7 @@ function triggerOneDayLateCelebration(roomName, userBirthdate) {
   const newAge = calculateAge(userBirthdate);
   const randomGif =
     RANDOM_BIRTHDAY_GIFS[
-      Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
+    Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
     ];
   const messageText = `Geçmiş ${newAge}. yaşın kutlu olsun ${myUsername}! Umarız harika bir gün geçirmişsindir... 🥳🎉 ${randomGif}`;
 
@@ -4130,7 +4142,7 @@ function triggerBirthdayCelebration(userBirthdate) {
 
   const randomGif =
     RANDOM_BIRTHDAY_GIFS[
-      Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
+    Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
     ];
   const celebrationMessage = {
     sender: "Official TinDay Team",
@@ -4157,7 +4169,7 @@ function triggerPastBirthdayCelebration(roomName) {
   let message = "";
   const randomGif =
     RANDOM_BIRTHDAY_GIFS[
-      Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
+    Math.floor(Math.random() * RANDOM_BIRTHDAY_GIFS.length)
     ];
   if (missedTheCountdown) {
     message = `Doğum günün kutlu olsun ${myUsername}! ❤️🥳🎉 ${randomGif}`;
@@ -4686,9 +4698,8 @@ function renderGifResults(gifs) {
       : gifUrl;
     const gifDiv = document.createElement("div");
     gifDiv.className = "favorite-item";
-    gifDiv.innerHTML = `<img src="${gifPreviewUrl}" alt="${
-      gifData.content_description || "GIF"
-    }" loading="lazy">`;
+    gifDiv.innerHTML = `<img src="${gifPreviewUrl}" alt="${gifData.content_description || "GIF"
+      }" loading="lazy">`;
     gifDiv.onclick = () => {
       let messageText = messageInput.value.trim();
       let content = "";
@@ -4841,9 +4852,8 @@ function openSettingsPopup() {
     item.innerHTML = `
         <label for="setting-${key}">${label}</label>
         <label class="switch">
-            <input type="checkbox" id="setting-${key}" ${
-      isEnabled ? "checked" : ""
-    }>
+            <input type="checkbox" id="setting-${key}" ${isEnabled ? "checked" : ""
+      }>
             <span class="slider round"></span>
         </label>
     `;
@@ -4861,11 +4871,9 @@ function openSettingsPopup() {
       ${buttons
         .map(
           (btn) => `
-        <button class="action-btn settings-icon-button" title="${
-          btn.title || ""
-        }" data-command="${btn.command}" data-should-close="${
-            btn.shouldCloseMenu || false
-          }">
+        <button class="action-btn settings-icon-button" title="${btn.title || ""
+            }" data-command="${btn.command}" data-should-close="${btn.shouldCloseMenu || false
+            }">
           <i class="${btn.iconClass}"></i>
         </button>
       `
@@ -4892,18 +4900,14 @@ function openSettingsPopup() {
     item.innerHTML = `
         <label>Sohbet Yavaşlatma</label>
         <div class="setting-options-group">
-            <button data-value="0" class="option-btn ${
-              currentValue === 0 ? "active" : ""
-            }">Kapalı</button>
-            <button data-value="1" class="option-btn ${
-              currentValue === 1 ? "active" : ""
-            }">1 sn</button>
-            <button data-value="2" class="option-btn ${
-              currentValue === 2 ? "active" : ""
-            }">2 sn</button>
-            <button data-value="3" class="option-btn ${
-              currentValue === 3 ? "active" : ""
-            }">3 sn</button>
+            <button data-value="0" class="option-btn ${currentValue === 0 ? "active" : ""
+      }">Kapalı</button>
+            <button data-value="1" class="option-btn ${currentValue === 1 ? "active" : ""
+      }">1 sn</button>
+            <button data-value="2" class="option-btn ${currentValue === 2 ? "active" : ""
+      }">2 sn</button>
+            <button data-value="3" class="option-btn ${currentValue === 3 ? "active" : ""
+      }">3 sn</button>
         </div>
     `;
     item.querySelectorAll(".option-btn").forEach((btn) => {
@@ -4962,9 +4966,8 @@ function openSettingsPopup() {
   autoLoginItem.innerHTML = `
       <label for="setting-autologin">Otomatik Giriş</label>
       <label class="switch">
-          <input type="checkbox" id="setting-autologin" ${
-            isAutoLoginEnabled ? "checked" : ""
-          }>
+          <input type="checkbox" id="setting-autologin" ${isAutoLoginEnabled ? "checked" : ""
+    }>
           <span class="slider round"></span>
       </label>
   `;
@@ -5072,9 +5075,9 @@ async function checkPublicIpAndWarn() {
     if (isPrivateIp(publicIp)) {
       return new Promise((resolve) => {
         showModal({
-          title: "P2P Uyarısı",
+          title: "P2P ve Gizlilik Uyarısı",
           message:
-            "Ağ yapılandırmanız, genel internete özel bir IP adresiyle çıktığınızı gösteriyor. Bu durum, genellikle kurumsal bir ağda veya özel bir VPN yapılandırmasında görülür.<br/><br/><b>Devam etmek, P2P bağlantı sorunlarına yol açabilir veya ağ bilgilerinizi ifşa edebilir. Bu uyarıyı bu oturum boyunca tekrar görmeyeceksiniz.</b>",
+            "Ağ yapılandırmanız veya STUN bağlantısı, internete özel bir IP adresi üzerinden çıktığınızı veya kısıtlı bir ağda olduğunuzu gösteriyor.<br/><br/><b>P2P (Özel Mesaj/Arama) bağlantıları, IP adresinizin karşı tarafça (gizlilik politikasında belirtildiği üzere) görülmesine neden olacaktır. Ayrıca kısıtlı ağlarda bu özellik çalışmayabilir. Devam etmek istiyor musunuz?</b>",
           buttons: [
             {
               text: "Yine de Devam Et",
